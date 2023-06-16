@@ -1,38 +1,36 @@
 package ru.practicum.shareit.item.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.Set;
 
 @EqualsAndHashCode
-@NoArgsConstructor
-@Setter
+@RequiredArgsConstructor
+@Builder
 public class ItemRestView {
     @JsonProperty("id")
-    private long id;
+    private final long id;
     @JsonProperty("ownerId")
-    private long ownerId;
+    private final long ownerId;
     @JsonProperty("name")
-    String name;
+    private final String name;
     @JsonProperty("description")
-    String description;
+    private final String description;
     @JsonProperty("available")
-    boolean isAvailable;
+    private final boolean isAvailable;
     // Ниже поля, которые отсутствуют в задании и тестах, но которые, как мне кажется, должны быть в логике приложения
     @JsonProperty("rent")
-    float rent;
+    private final float rent;
     @JsonProperty("itemRating")
-    float itemRating;
+    private final float itemRating;
     @JsonProperty("itemPhotoUri")
-    URI itemPhotoUri;
+    private final URI itemPhotoUri;
     @JsonProperty("postDate")
-    LocalDate postDate;
+    private final LocalDate postDate;
     @JsonProperty("requestsWithUseIds")
-    Set<Long> requestsWithUseIds;
+    private final Set<Long> requestsWithUseIds;
 
 }

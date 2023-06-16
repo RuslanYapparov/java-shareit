@@ -6,7 +6,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 
-import ru.practicum.shareit.common.CrudApi;
 import ru.practicum.shareit.common.RestViewListMapper;
 import ru.practicum.shareit.item.dto.ItemRestCommand;
 import ru.practicum.shareit.item.dto.ItemRestView;
@@ -18,74 +17,52 @@ import java.util.List;
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor
-public class ItemController implements CrudApi<ItemRestCommand, ItemRestView> {
+public class ItemController {
     private final ItemService itemService;
     private final ItemMapper itemMapper;
     private final RestViewListMapper restViewListMapper;
 
-    @Override
     @PostMapping
     public ItemRestView save(@RequestHeader(value = "X-Sharer-User-Id") @Positive long userId,
                              @RequestBody @Valid ItemRestCommand itemRestCommand) {
-        itemService.checkUserExisting(userId);
         itemRestCommand.setOwnerId(userId);
-        Item item = itemService.save(itemMapper.fromRestCommand(itemRestCommand));
+        Item item = itemService.save(userId, itemMapper.fromRestCommand(itemRestCommand));
         return itemMapper.toRestView(item);
     }
 
-    @Override
     @GetMapping
     public List<ItemRestView> getAll(
             @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @PositiveOrZero long userId) {
-        List<Item> items;
-        if (userId == 0) {
-            items = itemService.getAll();
-        } else {
-            itemService.checkUserExisting(userId);
-            items = itemService.getAllItemsOfUserById(userId);
-        }
-        return restViewListMapper.mapListOfItems(items);
+        return restViewListMapper.mapListOfItems(itemService.getAll(userId));
     }
 
-    @Override
     @GetMapping("{item_id}")
     public ItemRestView getById(
             @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @PositiveOrZero long userId,
             @PathVariable(name = "item_id") @Positive long itemId) {
-        itemService.checkUserExisting(userId);
-        return itemMapper.toRestView(itemService.getById(itemId));
+        return itemMapper.toRestView(itemService.getById(userId, itemId));
     }
 
-    @Override
     @PatchMapping("{item_id}")
     public ItemRestView update(
             @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @Positive long userId,
             @PathVariable(name = "item_id") @Positive long itemId,
             @RequestBody ItemRestCommand itemRestCommand) {
-        itemService.checkUserExisting(userId);
         itemRestCommand.setOwnerId(userId);
-        Item item = itemService.update(itemId, itemMapper.fromRestCommand(itemRestCommand));
+        Item item = itemService.update(userId, itemId, itemMapper.fromRestCommand(itemRestCommand));
         return itemMapper.toRestView(item);
     }
 
-    @Override
     @DeleteMapping
     public void deleteAll(@RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @Positive long userId) {
-        if (userId == 0) {
-            itemService.deleteAll();
-        } else {
-            itemService.checkUserExisting(userId);
-            itemService.deleteAllItemsOfUserById(userId);
-        }
+        itemService.deleteAll(userId);
     }
 
-    @Override
     @DeleteMapping("{item_id}")
     public ItemRestView deleteById(
             @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @PositiveOrZero long userId,
             @PathVariable(name = "item_id") @Positive long itemId) {
-        itemService.checkUserExisting(userId);
-        return itemMapper.toRestView(itemService.deleteById(itemId));
+        return itemMapper.toRestView(itemService.deleteById(userId, itemId));
     }
 
     @GetMapping("/search")
@@ -95,10 +72,7 @@ public class ItemController implements CrudApi<ItemRestCommand, ItemRestView> {
         if (text.isBlank()) {
             return Collections.emptyList();
         }
-        if (userId != 0) {
-            itemService.checkUserExisting(userId);
-        }
-        List<Item> items = itemService.searchInNamesAndDescriptionsByText(text);
+        List<Item> items = itemService.searchInNamesAndDescriptionsByText(userId, text);
         return restViewListMapper.mapListOfItems(items);
     }
 

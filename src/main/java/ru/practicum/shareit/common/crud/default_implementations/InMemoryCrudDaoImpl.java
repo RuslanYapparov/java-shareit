@@ -1,8 +1,8 @@
-package ru.practicum.shareit.common.default_implementations;
+package ru.practicum.shareit.common.crud.default_implementations;
 
 import ru.practicum.shareit.exception.ObjectAlreadyExistsException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
-import ru.practicum.shareit.common.CrudDao;
+import ru.practicum.shareit.common.crud.CrudDao;
 import ru.practicum.shareit.common.IdentificableObject;
 
 import java.util.HashMap;
@@ -70,6 +70,18 @@ public class InMemoryCrudDaoImpl<T extends IdentificableObject> implements CrudD
                     "невозможно, так как он не был сохранен в базе данных приложения", type, id));
         }
         return dataMap.remove(id);
+    }
+
+    @Override
+    public List<T> getAllEntitiesOfUserById(long userId) {                   // Метод нужно будет переопределить для
+        return null;                                                                 // Всех Dao-классов сущностей
+    }
+
+    @Override
+    public List<T> deleteAllEntitiesOfUserById(long userId) {
+        List<T> entities = getAllEntitiesOfUserById(userId);
+        entities.forEach(object -> dataMap.remove(object.getId()));
+        return entities;
     }
 
 }

@@ -1,41 +1,37 @@
 package ru.practicum.shareit.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import ru.practicum.shareit.user.address.dto.UserAddressRestView;
 
 import java.net.URI;
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.Set;
 
-@EqualsAndHashCode
-@NoArgsConstructor
-@Setter
+@RequiredArgsConstructor
+@Builder
 public class UserRestView {
     @JsonProperty("id")
-    private long id;
+    private final long id;
     @JsonProperty("name")
-    private String name;
+    private final String name;
     @JsonProperty("email")
-    private String email;
+    private final String email;
     // Ниже поля, которые отсутствуют в задании и тестах, но которые, как мне кажется, должны быть в логике приложения
     @JsonProperty("userItemsIds")
-    private Set<Long> userItemsIds = new HashSet<>();
+    private final Set<Long> userItemsIds;
     @JsonProperty("address")
-    private UserAddressRestView address;
+    private final UserAddressRestView address;
     @JsonProperty("telephoneNumber")
-    private long telephoneNumber;
+    private final long telephoneNumber;
     @JsonProperty("isTelephoneVisible")
-    private boolean isTelephoneVisible;
+    private final boolean isTelephoneVisible;
     @JsonProperty("avatarUri")
-    private URI avatarUri;
+    private final URI avatarUri;
     @JsonProperty("registrationDate")
-    private LocalDate registrationDate;
+    private final LocalDate registrationDate;
     @JsonProperty("userRating")
-    private float userRating;      // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим
+    private final float userRating;      // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим
 
 }

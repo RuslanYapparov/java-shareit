@@ -1,37 +1,71 @@
 package ru.practicum.shareit.user;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import ru.practicum.shareit.common.ShareItConstants;
-import ru.practicum.shareit.exception.BadRequestBodyException;
-import ru.practicum.shareit.exception.ObjectAlreadyExistsException;
-import ru.practicum.shareit.common.default_implementations.CrudServiceImpl;
+import ru.practicum.shareit.exception.*;
 import ru.practicum.shareit.user.dao.UserDao;
 
+import java.util.List;
+
 @Service
-public class UserService extends CrudServiceImpl<User> {
+@RequiredArgsConstructor
+@Slf4j
+public class UserService {
+    private final UserDao userDao;
 
-    public UserService(UserDao userDao) {
-        this.objectDao = userDao;
-        this.userDao = userDao;
-        this.type = "user";
+    public User save(User user) throws ObjectAlreadyExistsException {
+        checkUserEmail(user);
+        user = userDao.save(user);
+        log.info("Сохранен новый пользователь. Присвоен идентификатор '{}'", user.getId());
+        return user;
     }
 
-    @Override
-    public User save(User user) throws ObjectAlreadyExistsException, BadRequestBodyException {
-        this.checkUserEmail(user);
-        return super.save(user);
+    public List<User> getAll() throws ObjectNotFoundException {
+        List<User> users = userDao.getAll();
+        log.info("Запрошен список всех сохраненных пользователей. " +
+                "Количество сохраненных пользователей - {}", users.size());
+        return users;
     }
 
-    @Override
-    public User update(long userId, User user) {
+    public User getById(long id) throws ObjectNotFoundException {
+        User user = userDao.getById(id);
+        log.info("Запрошен пользователь с идентификатором '{}'", id);
+        return user;
+    }
+
+    public int getQuantity() {
+        return userDao.getQuantity();
+    }
+
+    public User update(long userId, User user) throws ObjectNotFoundException {
         User savedUser = userDao.getById(userId);
 
-        if (savedUser.getEmail().equals(user.getEmail())) {
-            return super.update(userId, user);
+        if (!savedUser.getEmail().equals(user.getEmail())) {
+            checkUserEmail(user);
         }
-        this.checkUserEmail(user);
-        return super.update(userId, user);
+        savedUser = userDao.update(userId, user);
+        log.info("Обновлены данные пользователя с id'{}'", userId);
+        return savedUser;
+    }
+
+    public void deleteAll() throws InternalLogicException {
+        int quantity = getQuantity();
+        userDao.deleteAll();
+        if (getQuantity() != 0) {
+            throw new InternalLogicException("Произошла ощибка при удалении всех пользователей. Если " +
+                        "Вы видите это сообщение, пожалуйста, обратитесь к разработчикам");
+            }
+        log.info("Удалены данные всех пользователей из хранилища. Количество объектов, которое было в хранилище " +
+                    "до удаления: {}", quantity);
+    }
+
+    public User deleteById(long id) throws ObjectNotFoundException {
+        User user = userDao.deleteById(id);
+        log.info("Удалены данные пользователя с идентификатором '{}'", id);
+        return user;
     }
 
     private void checkUserEmail(User user)  {

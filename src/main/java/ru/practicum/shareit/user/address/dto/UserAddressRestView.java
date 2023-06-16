@@ -3,23 +3,22 @@ package ru.practicum.shareit.user.address.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-@EqualsAndHashCode
-@NoArgsConstructor
-@Setter
+@RequiredArgsConstructor
+@Builder
 public class UserAddressRestView {
     @JsonProperty("userId")
-    long userId;
+    private final long userId;
     @JsonProperty("country")
-    String country;
+    private final String country;
     @JsonProperty("region")
-    String region;
+    private final String region;
     @JsonProperty("cityOrSettlement")
-    String cityOrSettlement;
+    private final String cityOrSettlement;
     @JsonProperty("cityDistrict")
-    String cityDistrict;
+    private final String cityDistrict;
     @JsonProperty("street")
-    String street;
+    private final String street;
     @JsonProperty("houseNumber")
-    int houseNumber;
+    private final int houseNumber;
 
 }
