@@ -17,7 +17,8 @@ public class UserMapper {
 
     public User fromRestCommand(UserRestCommand userRestCommand) {
         userRestCommand = validator.validate(userRestCommand);
-        User user = User.builder()
+        return User.builder()
+                .id(userRestCommand.getId())
                 .name(userRestCommand.getName())
                 .email(userRestCommand.getEmail())
                 .userItemsIds(userRestCommand.getUserItemsIds())
@@ -28,8 +29,6 @@ public class UserMapper {
                 .registrationDate(userRestCommand.getRegistrationDate())
                 .userRating(userRestCommand.getUserRating())
                 .build();
-        user.setId(userRestCommand.getId());
-        return user;
     }
 
     public UserRestView toRestView(User user) {

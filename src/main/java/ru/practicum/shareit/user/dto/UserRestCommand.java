@@ -27,7 +27,7 @@ public class UserRestCommand {
     // Ниже поля, которые отсутствуют в задании и тестах, но которые, как мне кажется, должны быть в логике приложения
     Set<Long> userItemsIds;
     UserAddressRestCommand address;
-    long telephoneNumber;
+    String telephoneNumber;
     boolean isTelephoneVisible;
     URI avatarUri;
     LocalDate registrationDate;

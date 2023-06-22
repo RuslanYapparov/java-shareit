@@ -3,13 +3,12 @@ package ru.practicum.shareit.common.crud.default_implementations;
 import ru.practicum.shareit.exception.ObjectAlreadyExistsException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.common.crud.CrudDao;
-import ru.practicum.shareit.common.IdentificableObject;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class InMemoryCrudDaoImpl<T extends IdentificableObject> implements CrudDao<T> {
+public class InMemoryCrudDaoImpl<T> implements CrudDao<T> {
     protected Map<Long, T> dataMap;
     protected long idCounter;
     protected String type;
@@ -22,7 +21,6 @@ public class InMemoryCrudDaoImpl<T extends IdentificableObject> implements CrudD
     @Override
     public T save(T object) {
         long objectId = ++idCounter;
-        object.setId(objectId);
         if (dataMap.containsValue(object)) {
             throw new ObjectAlreadyExistsException(String.format("Объект '%s' уже был сохранен ранее", type));
         }
@@ -80,7 +78,7 @@ public class InMemoryCrudDaoImpl<T extends IdentificableObject> implements CrudD
     @Override
     public List<T> deleteAllEntitiesOfUserById(long userId) {
         List<T> entities = getAllEntitiesOfUserById(userId);
-        entities.forEach(object -> dataMap.remove(object.getId()));
+        entities.forEach(dataMap::remove);
         return entities;
     }
 

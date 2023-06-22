@@ -38,7 +38,6 @@ public class InMemoryItemDaoImpl extends InMemoryCrudDaoImpl<Item> {
                         savedItem.getDescription() : itemDescription)
                 .isAvailable(isNewItemAvailable == null ? savedItem.getIsAvailable() : isNewItemAvailable)
                 .build();
-        savedItem.setId(itemId);
         dataMap.put(itemId, savedItem);
         return getById(itemId);
     }

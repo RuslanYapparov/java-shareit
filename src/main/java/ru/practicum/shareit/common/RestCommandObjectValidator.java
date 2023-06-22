@@ -26,7 +26,7 @@ public class RestCommandObjectValidator {
                 .email(checkStringField(type, "email", userCommand.getEmail()))
                 .userItemsIds(checkSetFieldWithLongs(userCommand.getUserItemsIds()))
                 .address(validate(userCommand.getAddress(), userCommand.getId()))
-                .telephoneNumber(userCommand.getTelephoneNumber())
+                .telephoneNumber(checkStringField(type, "telephone_number", userCommand.getTelephoneNumber()))
                 .isTelephoneVisible(userCommand.isTelephoneVisible())
                 .avatarUri(checkUriField(type, "avatar_uri", userCommand.getAvatarUri()))
                 .registrationDate(checkLocalDate(type, "registration_date", userCommand.getRegistrationDate()))

@@ -7,13 +7,12 @@ import ru.practicum.shareit.exception.InternalLogicException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.common.crud.CrudDao;
 import ru.practicum.shareit.common.crud.CrudService;
-import ru.practicum.shareit.common.IdentificableObject;
 import ru.practicum.shareit.user.dao.UserDao;
 
 import java.util.List;
 
 @Slf4j
-public class CrudServiceImpl<T extends IdentificableObject> implements CrudService<T> {
+public class CrudServiceImpl<T> implements CrudService<T> {
     protected CrudDao<T> objectDao;
     protected UserDao userDao;
     protected String type = "Some_type";
@@ -22,7 +21,7 @@ public class CrudServiceImpl<T extends IdentificableObject> implements CrudServi
     public T save(long userId, T object) {
         checkUserExisting(userId);
         object = objectDao.save(object);
-        log.info("Сохранен новый объект '{}'. Присвоен идентификатор '{}'", type, object.getId());
+        log.info("Сохранен новый объект '{}'", type);
         return object;
     }
 

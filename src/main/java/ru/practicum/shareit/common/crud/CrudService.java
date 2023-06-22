@@ -1,10 +1,8 @@
 package ru.practicum.shareit.common.crud;
 
-import ru.practicum.shareit.common.IdentificableObject;
-
 import java.util.List;
 
-public interface CrudService<T extends IdentificableObject> {
+public interface CrudService<T> {
     // T - тип данных объекта слоя бизнес-логики
     T save(long userId, T object);
 

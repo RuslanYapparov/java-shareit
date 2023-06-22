@@ -5,8 +5,6 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 
-import ru.practicum.shareit.common.IdentificableObject;
-
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.Set;
@@ -15,8 +13,9 @@ import java.util.Set;
 @EqualsAndHashCode(callSuper = false)
 @ToString(callSuper = true)
 @Builder(toBuilder = true)
-public class Item extends IdentificableObject {
-    long ownerId;
+public class Item {
+    Long id;
+    Long ownerId;
     String name;
     String description;
     Boolean isAvailable;

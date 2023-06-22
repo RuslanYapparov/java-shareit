@@ -6,7 +6,7 @@ import lombok.Value;
 @Value
 @Builder(toBuilder = true)
 public class UserAddress {
-    long userId;
+    Long userId;
     String country;
     String region;
     String cityOrSettlement;

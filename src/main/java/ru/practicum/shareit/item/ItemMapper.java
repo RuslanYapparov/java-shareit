@@ -14,7 +14,8 @@ public class ItemMapper {
 
     public Item fromRestCommand(ItemRestCommand itemRestCommand) {
         itemRestCommand = validator.validate(itemRestCommand);
-        Item item = Item.builder()
+        return Item.builder()
+                .id(itemRestCommand.getId())
                 .ownerId(itemRestCommand.getOwnerId())
                 .name(itemRestCommand.getName())
                 .description(itemRestCommand.getDescription())
@@ -25,8 +26,6 @@ public class ItemMapper {
                 .postDate(itemRestCommand.getItemPostDate())
                 .requestsWithUseIds(itemRestCommand.getRequestsWithUseIds())
                 .build();
-        item.setId(itemRestCommand.getId());
-        return item;
     }
 
     public ItemRestView toRestView(Item item) {

@@ -24,7 +24,7 @@ public class UserRestView {
     @JsonProperty("address")
     UserAddressRestView address;
     @JsonProperty("telephoneNumber")
-    long telephoneNumber;
+    String telephoneNumber;
     @JsonProperty("telephoneVisible")
     boolean telephoneVisible;
     @JsonProperty("avatarUri")

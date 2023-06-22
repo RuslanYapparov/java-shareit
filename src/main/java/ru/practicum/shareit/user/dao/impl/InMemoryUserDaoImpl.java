@@ -25,7 +25,6 @@ public class InMemoryUserDaoImpl extends InMemoryCrudDaoImpl<User> implements Us
                 .name(ShareItConstants.NOT_ASSIGNED.equals(userName) ? savedUser.getName() : userName)
                 .email(ShareItConstants.NOT_ASSIGNED.equals(userEmail) ? savedUser.getEmail() : userEmail)
                 .build();
-        savedUser.setId(userId);
         dataMap.put(userId, savedUser);
         return dataMap.get(userId);
     }
