@@ -3,7 +3,6 @@ package ru.practicum.shareit.user.dao.impl;
 import org.springframework.stereotype.Repository;
 
 import ru.practicum.shareit.common.ShareItConstants;
-import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.common.crud.default_implementations.InMemoryCrudDaoImpl;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.dao.UserDao;
@@ -17,7 +16,7 @@ public class InMemoryUserDaoImpl extends InMemoryCrudDaoImpl<User> implements Us
     }
 
     @Override
-    public User update(long userId, User user) throws ObjectNotFoundException {
+    public User update(long userId, User user) {
         String userName = user.getName();
         String userEmail = user.getEmail();
         User savedUser = getById(userId);

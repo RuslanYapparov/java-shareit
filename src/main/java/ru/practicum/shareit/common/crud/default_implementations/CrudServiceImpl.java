@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import ru.practicum.shareit.exception.BadRequestHeaderException;
 import ru.practicum.shareit.exception.InternalLogicException;
-import ru.practicum.shareit.exception.ObjectAlreadyExistsException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.common.crud.CrudDao;
 import ru.practicum.shareit.common.crud.CrudService;
@@ -20,7 +19,7 @@ public class CrudServiceImpl<T extends IdentificableObject> implements CrudServi
     protected String type = "Some_type";
 
     @Override
-    public T save(long userId, T object) throws ObjectAlreadyExistsException {
+    public T save(long userId, T object) {
         checkUserExisting(userId);
         object = objectDao.save(object);
         log.info("Сохранен новый объект '{}'. Присвоен идентификатор '{}'", type, object.getId());
@@ -28,7 +27,7 @@ public class CrudServiceImpl<T extends IdentificableObject> implements CrudServi
     }
 
     @Override
-    public List<T> getAll(long userId) throws BadRequestHeaderException, ObjectNotFoundException {
+    public List<T> getAll(long userId) {
         List<T> objects;
         if (userId == 0) {
             objects = objectDao.getAll();
@@ -44,7 +43,7 @@ public class CrudServiceImpl<T extends IdentificableObject> implements CrudServi
     }
 
     @Override
-    public T getById(long userId, long id) throws BadRequestHeaderException, ObjectNotFoundException {
+    public T getById(long userId, long id) {
         checkUserExisting(userId);
         T object = objectDao.getById(id);
         log.info("Запрошен объект '{}' с идентификатором '{}'", type, id);
@@ -57,7 +56,7 @@ public class CrudServiceImpl<T extends IdentificableObject> implements CrudServi
     }
 
     @Override
-    public T update(long userId, long objectId, T object) throws BadRequestHeaderException, ObjectNotFoundException {
+    public T update(long userId, long objectId, T object) {
         checkUserExisting(userId);
         object = objectDao.update(objectId, object);
         log.info("Обновлены данные объекта '{}' с идентификатором '{}'", type, objectId);
@@ -65,8 +64,7 @@ public class CrudServiceImpl<T extends IdentificableObject> implements CrudServi
     }
 
     @Override
-    public void deleteAll(long userId)
-            throws BadRequestHeaderException, ObjectNotFoundException, InternalLogicException {
+    public void deleteAll(long userId) {
         if (userId == 0) {
             int quantity = getQuantity();
             objectDao.deleteAll();
@@ -85,14 +83,14 @@ public class CrudServiceImpl<T extends IdentificableObject> implements CrudServi
     }
 
     @Override
-    public T deleteById(long userId, long id) throws BadRequestHeaderException, ObjectNotFoundException {
+    public T deleteById(long userId, long id) {
         checkUserExisting(userId);
         T object = objectDao.deleteById(id);
         log.info("Удален объект '{}' с идентификатором '{}'", type, id);
         return object;
     }
 
-    protected void checkUserExisting(long userId) throws ObjectNotFoundException, BadRequestHeaderException {
+    protected void checkUserExisting(long userId) {
         if (userId == 0) {
             throw new BadRequestHeaderException("Не указан идентификатор пользователя-хозяина вещи в заголовке " +
                     "Http-запроса");

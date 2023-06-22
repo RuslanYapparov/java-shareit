@@ -40,7 +40,7 @@ public class UserMapper {
                 .userItemsIds(user.getUserItemsIds())
                 .address(userAddressMapper.toRestView(user.getAddress()))
                 .telephoneNumber(user.getTelephoneNumber())
-                .isTelephoneVisible(user.isTelephoneVisible())
+                .telephoneVisible(user.isTelephoneVisible())
                 .avatarUri(user.getAvatarUri())
                 .registrationDate(user.getRegistrationDate())
                 .userRating(user.getUserRating())

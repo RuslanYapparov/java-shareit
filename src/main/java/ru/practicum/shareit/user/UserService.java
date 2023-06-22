@@ -16,21 +16,21 @@ import java.util.List;
 public class UserService {
     private final UserDao userDao;
 
-    public User save(User user) throws ObjectAlreadyExistsException {
+    public User save(User user) {
         checkUserEmail(user);
         user = userDao.save(user);
         log.info("Сохранен новый пользователь. Присвоен идентификатор '{}'", user.getId());
         return user;
     }
 
-    public List<User> getAll() throws ObjectNotFoundException {
+    public List<User> getAll() {
         List<User> users = userDao.getAll();
         log.info("Запрошен список всех сохраненных пользователей. " +
                 "Количество сохраненных пользователей - {}", users.size());
         return users;
     }
 
-    public User getById(long id) throws ObjectNotFoundException {
+    public User getById(long id) {
         User user = userDao.getById(id);
         log.info("Запрошен пользователь с идентификатором '{}'", id);
         return user;
@@ -40,7 +40,7 @@ public class UserService {
         return userDao.getQuantity();
     }
 
-    public User update(long userId, User user) throws ObjectNotFoundException {
+    public User update(long userId, User user) {
         User savedUser = userDao.getById(userId);
 
         if (!savedUser.getEmail().equals(user.getEmail())) {
@@ -51,7 +51,7 @@ public class UserService {
         return savedUser;
     }
 
-    public void deleteAll() throws InternalLogicException {
+    public void deleteAll() {
         int quantity = getQuantity();
         userDao.deleteAll();
         if (getQuantity() != 0) {
@@ -62,7 +62,7 @@ public class UserService {
                     "до удаления: {}", quantity);
     }
 
-    public User deleteById(long id) throws ObjectNotFoundException {
+    public User deleteById(long id) {
         User user = userDao.deleteById(id);
         log.info("Удалены данные пользователя с идентификатором '{}'", id);
         return user;

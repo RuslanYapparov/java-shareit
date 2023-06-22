@@ -7,30 +7,29 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.Set;
 
-@EqualsAndHashCode
-@RequiredArgsConstructor
+@Value
 @Builder
 public class ItemRestView {
     @JsonProperty("id")
-    private final long id;
+    long id;
     @JsonProperty("ownerId")
-    private final long ownerId;
+    long ownerId;
     @JsonProperty("name")
-    private final String name;
+    String name;
     @JsonProperty("description")
-    private final String description;
+    String description;
     @JsonProperty("available")
-    private final boolean isAvailable;
+    boolean isAvailable;
     // Ниже поля, которые отсутствуют в задании и тестах, но которые, как мне кажется, должны быть в логике приложения
     @JsonProperty("rent")
-    private final float rent;
+    float rent;
     @JsonProperty("itemRating")
-    private final float itemRating;
+    float itemRating;
     @JsonProperty("itemPhotoUri")
-    private final URI itemPhotoUri;
+    URI itemPhotoUri;
     @JsonProperty("postDate")
-    private final LocalDate postDate;
+    LocalDate postDate;
     @JsonProperty("requestsWithUseIds")
-    private final Set<Long> requestsWithUseIds;
+    Set<Long> requestsWithUseIds;
 
 }

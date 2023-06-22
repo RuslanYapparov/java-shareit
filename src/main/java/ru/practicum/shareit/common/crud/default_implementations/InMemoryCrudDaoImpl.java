@@ -20,7 +20,7 @@ public class InMemoryCrudDaoImpl<T extends IdentificableObject> implements CrudD
     }
 
     @Override
-    public T save(T object) throws ObjectAlreadyExistsException {
+    public T save(T object) {
         long objectId = ++idCounter;
         object.setId(objectId);
         if (dataMap.containsValue(object)) {
@@ -36,7 +36,7 @@ public class InMemoryCrudDaoImpl<T extends IdentificableObject> implements CrudD
     }
 
     @Override
-    public T getById(long id) throws ObjectNotFoundException {
+    public T getById(long id) {
         if (!dataMap.containsKey(id)) {
             throw new ObjectNotFoundException(String.format("Объект '%s' с идентификатором '%d' не найден " +
                     "в базе данных приложения", type, id));
@@ -50,7 +50,7 @@ public class InMemoryCrudDaoImpl<T extends IdentificableObject> implements CrudD
     }
 
     @Override
-    public T update(long objectId, T object) throws ObjectNotFoundException {
+    public T update(long objectId, T object) {
         if (!dataMap.containsKey(objectId)) {
             throw new ObjectNotFoundException(String.format("Обновление объекта '%s' с идентификатором '%d' " +
                     "невозможно, так как он не был сохранен в базе данных приложения", type, objectId));
@@ -64,7 +64,7 @@ public class InMemoryCrudDaoImpl<T extends IdentificableObject> implements CrudD
         dataMap.clear();
     }
 
-    public T deleteById(long id) throws ObjectNotFoundException {
+    public T deleteById(long id) {
         if (!dataMap.containsKey(id)) {
             throw new ObjectNotFoundException(String.format("Удаление объекта '%s' с идентификатором '%d' " +
                     "невозможно, так как он не был сохранен в базе данных приложения", type, id));

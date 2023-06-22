@@ -13,25 +13,24 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.Set;
 
-@NoArgsConstructor
-@Getter
-@Setter
+@Value
+@Builder(toBuilder = true)
 public class UserRestCommand {
     @PositiveOrZero
-    private long id;
+    long id;
     @NotNull
     @NotBlank
-    private String name;
+    String name;
     @NotNull
     @Email
-    private String email;
+    String email;
     // Ниже поля, которые отсутствуют в задании и тестах, но которые, как мне кажется, должны быть в логике приложения
-    private Set<Long> userItemsIds;
-    private UserAddressRestCommand address;
-    private long telephoneNumber;
-    private boolean isTelephoneVisible;
-    private URI avatarUri;
-    private LocalDate registrationDate;
-    private float userRating;     // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим
+    Set<Long> userItemsIds;
+    UserAddressRestCommand address;
+    long telephoneNumber;
+    boolean isTelephoneVisible;
+    URI avatarUri;
+    LocalDate registrationDate;
+    float userRating;     // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим
 
 }

@@ -4,7 +4,6 @@ import org.springframework.stereotype.Repository;
 
 import ru.practicum.shareit.common.ShareItConstants;
 import ru.practicum.shareit.common.crud.default_implementations.InMemoryCrudDaoImpl;
-import ru.practicum.shareit.exception.BadRequestHeaderException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.item.Item;
 
@@ -20,7 +19,7 @@ public class InMemoryItemDaoImpl extends InMemoryCrudDaoImpl<Item> {
     }
 
     @Override
-    public Item update(long itemId, Item item) throws ObjectNotFoundException, BadRequestHeaderException {
+    public Item update(long itemId, Item item) {
         long newItemOwnerId = item.getOwnerId();
         String itemName = item.getName();
         String itemDescription = item.getDescription();

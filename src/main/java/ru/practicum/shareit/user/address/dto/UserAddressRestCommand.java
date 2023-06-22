@@ -1,19 +1,17 @@
 package ru.practicum.shareit.user.address.dto;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Value;
 
-@NoArgsConstructor
-@Getter
-@Setter
+@Value
+@Builder(toBuilder = true)
 public class UserAddressRestCommand {
-    private long userId;
-    private String country;
-    private String region;
-    private String cityOrSettlement;
-    private String cityDistrict;
-    private String street;
-    private int houseNumber;
+    long userId;
+    String country;
+    String region;
+    String cityOrSettlement;
+    String cityDistrict;
+    String street;
+    int houseNumber;
 
 }

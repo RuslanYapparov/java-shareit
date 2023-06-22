@@ -9,29 +9,29 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.util.Set;
 
-@RequiredArgsConstructor
+@Value
 @Builder
 public class UserRestView {
     @JsonProperty("id")
-    private final long id;
+    long id;
     @JsonProperty("name")
-    private final String name;
+    String name;
     @JsonProperty("email")
-    private final String email;
+    String email;
     // Ниже поля, которые отсутствуют в задании и тестах, но которые, как мне кажется, должны быть в логике приложения
     @JsonProperty("userItemsIds")
-    private final Set<Long> userItemsIds;
+    Set<Long> userItemsIds;
     @JsonProperty("address")
-    private final UserAddressRestView address;
+    UserAddressRestView address;
     @JsonProperty("telephoneNumber")
-    private final long telephoneNumber;
-    @JsonProperty("isTelephoneVisible")
-    private final boolean isTelephoneVisible;
+    long telephoneNumber;
+    @JsonProperty("telephoneVisible")
+    boolean telephoneVisible;
     @JsonProperty("avatarUri")
-    private final URI avatarUri;
+    URI avatarUri;
     @JsonProperty("registrationDate")
-    private final LocalDate registrationDate;
+    LocalDate registrationDate;
     @JsonProperty("userRating")
-    private final float userRating;      // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим
+    float userRating;      // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим
 
 }

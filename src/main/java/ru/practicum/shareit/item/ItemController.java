@@ -25,7 +25,9 @@ public class ItemController {
     @PostMapping
     public ItemRestView save(@RequestHeader(value = "X-Sharer-User-Id") @Positive long userId,
                              @RequestBody @Valid ItemRestCommand itemRestCommand) {
-        itemRestCommand.setOwnerId(userId);
+        itemRestCommand = itemRestCommand.toBuilder()
+                .ownerId(userId)
+                .build();
         Item item = itemService.save(userId, itemMapper.fromRestCommand(itemRestCommand));
         return itemMapper.toRestView(item);
     }
@@ -48,7 +50,9 @@ public class ItemController {
             @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @Positive long userId,
             @PathVariable(name = "item_id") @Positive long itemId,
             @RequestBody ItemRestCommand itemRestCommand) {
-        itemRestCommand.setOwnerId(userId);
+        itemRestCommand = itemRestCommand.toBuilder()
+                .ownerId(userId)
+                .build();
         Item item = itemService.update(userId, itemId, itemMapper.fromRestCommand(itemRestCommand));
         return itemMapper.toRestView(item);
     }

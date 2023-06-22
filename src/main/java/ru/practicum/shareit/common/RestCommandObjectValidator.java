@@ -20,62 +20,66 @@ public class RestCommandObjectValidator {
             throw new BadRequestBodyException("Не переданы данные пользователя для сохранения/обновления в " +
                     "Http-запросе. Если Вы видите данное сообщение, пожалуйста, сообщите разработчикам");
         }
-        userCommand.setId(checkLongField(type, "id", userCommand.getId()));
-        userCommand.setName(checkStringField(type, "name", userCommand.getName()));
-        userCommand.setEmail(checkStringField(type, "email", userCommand.getEmail()));
-        userCommand.setUserItemsIds(checkSetFieldWithLongs(userCommand.getUserItemsIds()));
-        userCommand.setAddress(validate(userCommand.getAddress(), userCommand.getId()));
-        userCommand.setAvatarUri(checkUriField(type, "avatar_uri", userCommand.getAvatarUri()));
-        userCommand.setRegistrationDate(checkLocalDate(
-                type, "registration_date", userCommand.getRegistrationDate()));
-        return userCommand;
+        return UserRestCommand.builder()
+                .id(checkLongField(type, "id", userCommand.getId()))
+                .name(checkStringField(type, "name", userCommand.getName()))
+                .email(checkStringField(type, "email", userCommand.getEmail()))
+                .userItemsIds(checkSetFieldWithLongs(userCommand.getUserItemsIds()))
+                .address(validate(userCommand.getAddress(), userCommand.getId()))
+                .telephoneNumber(userCommand.getTelephoneNumber())
+                .isTelephoneVisible(userCommand.isTelephoneVisible())
+                .avatarUri(checkUriField(type, "avatar_uri", userCommand.getAvatarUri()))
+                .registrationDate(checkLocalDate(type, "registration_date", userCommand.getRegistrationDate()))
+                .userRating(userCommand.getUserRating())
+                .build();
     }
 
     public ItemRestCommand validate(ItemRestCommand itemCommand) {
         String type = "вещь";
         if (itemCommand == null) {
-            throw new BadRequestBodyException("Не переданы данные вещи для сохранения/обновления в Http-запросе. Если Вы " +
-                    "видите данное сообщение, пожалуйста, сообщите разработчикам");
+            throw new BadRequestBodyException("Не переданы данные вещи для сохранения/обновления в Http-запросе. " +
+                    "Если Вы видите данное сообщение, пожалуйста, сообщите разработчикам");
         }
-        itemCommand.setId(checkLongField(type, "id", itemCommand.getId()));
-        itemCommand.setOwnerId(checkLongField(type, "owner_id", itemCommand.getOwnerId()));
-        itemCommand.setName(checkStringField(type, "name", itemCommand.getName()));
-        itemCommand.setDescription(checkStringField(type, "description", itemCommand.getDescription()));
-        itemCommand.setAvailable(itemCommand.getAvailable());
-        itemCommand.setRent(checkFloatField(type, "rent", itemCommand.getRent()));
-        itemCommand.setItemRating(itemCommand.getItemRating());
-        itemCommand.setItemPhotoUri(checkUriField(type, "photo_uri", itemCommand.getItemPhotoUri()));
-        itemCommand.setItemPostDate(checkLocalDate(type, "post_date", itemCommand.getItemPostDate()));
-        itemCommand.setRequestsWithUseIds(checkSetFieldWithLongs(itemCommand.getRequestsWithUseIds()));
-        return itemCommand;
+        return ItemRestCommand.builder()
+                .id(checkLongField(type, "id", itemCommand.getId()))
+                .ownerId(checkLongField(type, "owner_id", itemCommand.getOwnerId()))
+                .name(checkStringField(type, "name", itemCommand.getName()))
+                .description(checkStringField(type, "description", itemCommand.getDescription()))
+                .available(itemCommand.getAvailable())
+                .rent(checkFloatField(type, "rent", itemCommand.getRent()))
+                .itemRating(itemCommand.getItemRating())
+                .itemPhotoUri(checkUriField(type, "photo_uri", itemCommand.getItemPhotoUri()))
+                .itemPostDate(checkLocalDate(type, "post_date", itemCommand.getItemPostDate()))
+                .requestsWithUseIds(checkSetFieldWithLongs(itemCommand.getRequestsWithUseIds()))
+                .build();
     }
 
     private UserAddressRestCommand validate(UserAddressRestCommand addressCommand, long userId) {
         String type = "адрес пользователя";
         if (addressCommand == null) {
-            addressCommand = new UserAddressRestCommand();
-            addressCommand.setUserId(userId);
-            addressCommand.setCountry(ShareItConstants.NOT_ASSIGNED);
-            addressCommand.setRegion(ShareItConstants.NOT_ASSIGNED);
-            addressCommand.setCityDistrict(ShareItConstants.NOT_ASSIGNED);
-            addressCommand.setCityDistrict(ShareItConstants.NOT_ASSIGNED);
-            addressCommand.setStreet(ShareItConstants.NOT_ASSIGNED);
+            return UserAddressRestCommand.builder()
+                    .userId(userId)
+                    .country(ShareItConstants.NOT_ASSIGNED)
+                    .region(ShareItConstants.NOT_ASSIGNED)
+                    .cityOrSettlement(ShareItConstants.NOT_ASSIGNED)
+                    .cityDistrict(ShareItConstants.NOT_ASSIGNED)
+                    .street(ShareItConstants.NOT_ASSIGNED)
+                    .build();
         } else {
             if (userId != addressCommand.getUserId()) {
                 throw new BadRequestBodyException("Невозможно сохранить пользователя - значение его " +
                         "идентификатора не совпадает со значением, указанном в адресе");
             }
-            addressCommand.setCountry(checkStringField(type, "country", addressCommand.getCountry()));
-            addressCommand.setRegion(checkStringField(type, "region", addressCommand.getRegion()));
-            addressCommand.setCityDistrict(checkStringField(
-                    type, "city", addressCommand.getCityOrSettlement()));
-            addressCommand.setCityDistrict(checkStringField(
-                    type, "district", addressCommand.getCityDistrict()));
-            addressCommand.setStreet(checkStringField(type, "street", addressCommand.getStreet()));
-            addressCommand.setHouseNumber((int)
-                    checkLongField(type, "house_number", addressCommand.getHouseNumber()));
+            return UserAddressRestCommand.builder()
+                    .userId(userId)
+                    .country(checkStringField(type, "country", addressCommand.getCountry()))
+                    .region(checkStringField(type, "region", addressCommand.getRegion()))
+                    .cityOrSettlement(checkStringField(type, "city", addressCommand.getCityOrSettlement()))
+                    .cityDistrict(checkStringField(type, "district", addressCommand.getCityDistrict()))
+                    .street(checkStringField(type, "street", addressCommand.getStreet()))
+                    .houseNumber((int) checkLongField(type, "house_number", addressCommand.getHouseNumber()))
+                    .build();
         }
-        return addressCommand;
     }
 
     private long checkLongField(String type, String fieldName, long value) {
