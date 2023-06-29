@@ -67,10 +67,12 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
                     "идентификатором id'%d' отклонена: только владелец вещи может изменять статус", bookingId));
         }
         String bookingStatus = bookingEntity.getStatus();
-        if (isApproved & "APPROVED".equals(bookingStatus)) {
-            throw new BadRequestParameterException(String.format("Пользователь с id%d уже устанавливал статус " +
-                    "%s бронированию с id%d для своей вещи %s", userId, bookingStatus, bookingId,
-                    bookingEntity.getItem().getName()));
+        if (isApproved) {                              // Для устранения 'use of non-short-circuit logic' spotbugs
+            if ("APPROVED".equals(bookingStatus)) {
+                throw new BadRequestParameterException(String.format("Пользователь с id%d уже устанавливал статус " +
+                                "%s бронированию с id%d для своей вещи %s", userId, bookingStatus, bookingId,
+                        bookingEntity.getItem().getName()));
+            }
         }
         bookingEntity.setStatus(isApproved ? BookingStatus.APPROVED.name() : BookingStatus.REJECTED.name());
         bookingEntity = bookingRepository.save(bookingEntity);
@@ -169,10 +171,12 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
         BookingEntity bookingEntity = entityRepository.findById(bookingId).orElseThrow(() ->
                 new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
                         "идентификатором id%d произошла ошибка: объект ранее не был сохранен", type, bookingId)));
-        if (userId != bookingEntity.getUserId() & userId != bookingEntity.getItem().getUserId()) {
-            throw new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
-                    "идентификатором id%d произошла ошибка: пользователь с id%d не является владельцем вещи и " +
-                    "не бронировал ее у другого пользователя", type, bookingId, userId));
+        if (userId != bookingEntity.getUserId()) {        // Для устранения 'use of non-short-circuit logic' spotbugs
+            if (userId != bookingEntity.getItem().getUserId()) {
+                throw new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
+                        "идентификатором id%d произошла ошибка: пользователь с id%d не является владельцем вещи и " +
+                        "не бронировал ее у другого пользователя", type, bookingId, userId));
+            }
         }
         return bookingEntity;
     }
