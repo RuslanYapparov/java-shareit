@@ -12,10 +12,10 @@ public class ItemValidator implements DomainObjectValidator<Item> {
         String type = "вещь";
         return Item.builder()
                 .id(checkLongField(type, "id", item.getId()))
-                .userId(checkLongField(type, "owner_id", item.getUserId()))
+                .ownerId(checkLongField(type, "owner_id", item.getOwnerId()))
                 .name(checkStringField(type, "name", item.getName()))
                 .description(checkStringField(type, "description", item.getDescription()))
-                .isAvailable(item.getIsAvailable())
+                .available(item.getAvailable())
                 .rent(checkFloatField(type, "rent", item.getRent()))
                 .itemRating(item.getItemRating())
                 .itemPhotoUri(checkUriField(type, "photo_uri", item.getItemPhotoUri()))

@@ -18,21 +18,12 @@ import java.util.stream.Collectors;
 public interface ItemMapper extends ObjectMapper<ItemEntity, Item, ItemRestCommand, ItemRestView> {
 
     @Override
-    @Mapping(target = "isAvailable", expression = "java(itemRestCommand.getAvailable())")
-    @Mapping(target = "userId", expression = "java(itemRestCommand.getOwnerId())")
-    Item fromRestCommand(ItemRestCommand itemRestCommand);
-
-    @Override
-    @Mapping(target = "ownerId", expression = "java(item.getUserId())")
-    ItemRestView toRestView(Item item);
-
-    @Override
-    @Mapping(target = "available", expression = "java(item.getIsAvailable())")
+    @Mapping(target = "userId", source = "ownerId")
     ItemEntity toDbEntity(Item item);
 
     @Override
-    @Mapping(target = "isAvailable", expression = "java(itemEntity.isAvailable())")
     @Mapping(target = "comments", source = "itemComments", qualifiedByName = "mapListOfComments")
+    @Mapping(target = "ownerId", source = "userId")
     Item fromDbEntity(ItemEntity itemEntity);
 
     @Named("mapListOfComments")

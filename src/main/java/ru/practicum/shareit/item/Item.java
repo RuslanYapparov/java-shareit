@@ -12,10 +12,10 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class Item {
     long id;
-    long userId;
+    long ownerId;
     String name;
     String description;
-    Boolean isAvailable;
+    Boolean available;
     ItemBooking nextBooking;
     ItemBooking lastBooking;
     List<Comment> comments;

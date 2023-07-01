@@ -21,7 +21,7 @@ public class ItemRestView {
     @JsonProperty("description")
     String description;
     @JsonProperty("available")
-    boolean isAvailable;
+    boolean available;
     @JsonProperty("nextBooking")
     ItemBooking nextBooking;
     @JsonProperty("lastBooking")

@@ -42,8 +42,4 @@ public interface DomainObjectValidator<T> {
         return (value == null) ? ShareItConstants.DEFAULT_URI : value;
     }
 
-    default Set<Long> checkSetFieldWithLongs(Set<Long> value) {
-        return (value == null) ? new HashSet<>() : value;
-    }
-
 }
