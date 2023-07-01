@@ -3,8 +3,6 @@ package ru.practicum.shareit.common;
 import ru.practicum.shareit.exception.BadRequestBodyException;
 
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
 
 public interface DomainObjectValidator<T> {
     // T - тип данных объекта сервисного слоя (user, item, etc.)
