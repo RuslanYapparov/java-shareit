@@ -19,7 +19,7 @@ public interface BookingMapper extends ObjectMapper<BookingEntity, Booking, Book
     BookingRestView toRestView(Booking booking);
 
     @Override
-    @Mapping(target = "bookerId", expression = "java(bookingEntity.getUserId())")
+    @Mapping(target = "bookerId", source = "userId")
     @Mapping(target = "itemId", expression = "java(bookingEntity.getItem().getId())")
     @Mapping(target = "itemOwnerId", expression = "java(bookingEntity.getItem().getUserId())")
     @Mapping(target = "itemName", expression = "java(bookingEntity.getItem().getName())")
@@ -28,7 +28,7 @@ public interface BookingMapper extends ObjectMapper<BookingEntity, Booking, Book
 
     @Override
     @Mapping(target = "status", expression = "java(booking.getBookingStatus().name())")
-    @Mapping(target = "userId", expression = "java(booking.getBookerId())")
+    @Mapping(target = "userId", source = "bookerId")
     BookingEntity toDbEntity(Booking booking);
 
 }

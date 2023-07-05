@@ -22,7 +22,7 @@ public interface ItemMapper extends ObjectMapper<ItemEntity, Item, ItemRestComma
     ItemEntity toDbEntity(Item item);
 
     @Override
-    @Mapping(target = "comments", source = "itemComments", qualifiedByName = "mapListOfComments")
+    @Mapping(target = "comments", source = "comments", qualifiedByName = "mapListOfComments")
     @Mapping(target = "ownerId", source = "userId")
     Item fromDbEntity(ItemEntity itemEntity);
 

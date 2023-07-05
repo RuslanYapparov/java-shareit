@@ -21,7 +21,7 @@ public class UserValidator implements DomainObjectValidator<User> {
                 .email(checkStringField(type, "email", user.getEmail()))
                 .address(validate(user.getAddress()))
                 .telephoneNumber(checkStringField(type, "telephone_number", user.getTelephoneNumber()))
-                .isTelephoneVisible(user.isTelephoneVisible())
+                .telephoneVisible(user.isTelephoneVisible())
                 .avatarUri(checkUriField(type, "avatar_uri", user.getAvatarUri()))
                 .userRating(user.getUserRating())
                 .build();
