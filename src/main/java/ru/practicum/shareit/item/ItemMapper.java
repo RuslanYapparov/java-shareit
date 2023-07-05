@@ -1,47 +1,44 @@
 package ru.practicum.shareit.item;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-import ru.practicum.shareit.common.RestCommandObjectValidator;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import ru.practicum.shareit.common.ObjectMapper;
+import ru.practicum.shareit.item.comment.Comment;
+import ru.practicum.shareit.item.comment.dao.CommentEntity;
+import ru.practicum.shareit.item.dao.ItemEntity;
 import ru.practicum.shareit.item.dto.ItemRestCommand;
 import ru.practicum.shareit.item.dto.ItemRestView;
 
-@Component
-@RequiredArgsConstructor
-public class ItemMapper {
-    // В задании было указано написать мэпперы для Item и User самостоятельно, поэтому не использую mapstruct
-    private final RestCommandObjectValidator validator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
-    public Item fromRestCommand(ItemRestCommand itemRestCommand) {
-        itemRestCommand = validator.validate(itemRestCommand);
-        Item item = Item.builder()
-                .ownerId(itemRestCommand.getOwnerId())
-                .name(itemRestCommand.getName())
-                .description(itemRestCommand.getDescription())
-                .isAvailable(itemRestCommand.getAvailable())
-                .rent(itemRestCommand.getRent())
-                .itemRating(itemRestCommand.getItemRating())
-                .itemPhotoUri(itemRestCommand.getItemPhotoUri())
-                .postDate(itemRestCommand.getItemPostDate())
-                .requestsWithUseIds(itemRestCommand.getRequestsWithUseIds())
-                .build();
-        item.setId(itemRestCommand.getId());
-        return item;
-    }
+@Mapper(componentModel = "spring")
+public interface ItemMapper extends ObjectMapper<ItemEntity, Item, ItemRestCommand, ItemRestView> {
 
-    public ItemRestView toRestView(Item item) {
-        return ItemRestView.builder()
-                .id(item.getId())
-                .ownerId(item.getOwnerId())
-                .name(item.getName())
-                .description(item.getDescription())
-                .isAvailable(item.getIsAvailable())
-                .rent(item.getRent())
-                .itemRating(item.getItemRating())
-                .itemPhotoUri(item.getItemPhotoUri())
-                .postDate(item.getPostDate())
-                .requestsWithUseIds(item.getRequestsWithUseIds())
-                .build();
+    @Override
+    @Mapping(target = "userId", source = "ownerId")
+    ItemEntity toDbEntity(Item item);
+
+    @Override
+    @Mapping(target = "comments", source = "itemComments", qualifiedByName = "mapListOfComments")
+    @Mapping(target = "ownerId", source = "userId")
+    Item fromDbEntity(ItemEntity itemEntity);
+
+    @Named("mapListOfComments")
+    default List<Comment> mapListOfComments(List<CommentEntity> commentEntities) {
+        if (commentEntities == null || commentEntities.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return commentEntities.stream()
+                .map(commentEntity -> new Comment(commentEntity.getId(),
+                        commentEntity.getUserId(),
+                        commentEntity.getAuthorName(),
+                        commentEntity.getText(),
+                        commentEntity.getCreated(),
+                        commentEntity.getLastModified()))
+                .collect(Collectors.toList());
     }
 
 }

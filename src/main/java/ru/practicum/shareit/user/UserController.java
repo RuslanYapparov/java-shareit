@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
 
-import ru.practicum.shareit.common.RestViewListMapper;
 import ru.practicum.shareit.user.dto.UserRestCommand;
 import ru.practicum.shareit.user.dto.UserRestView;
 
@@ -18,32 +17,26 @@ import java.util.List;
 @RequestMapping(path = "/users")
 public class UserController {
     private final UserService userService;
-    private final UserMapper userMapper;
-    private final RestViewListMapper restViewListMapper;
 
     @PostMapping
     public UserRestView save(@RequestBody @Valid UserRestCommand userRestCommand) {
-        User user = userMapper.fromRestCommand(userRestCommand);
-        user = userService.save(user);
-        return userMapper.toRestView(user);
+        return userService.save(userRestCommand);
     }
 
     @GetMapping
     public List<UserRestView> getAll() {
-        return restViewListMapper.mapListOfUsers(userService.getAll());
+        return userService.getAll();
     }
 
     @GetMapping("{user_id}")
-    public UserRestView getById(@PathVariable(value = "user_id") @Positive long id) {
-        return userMapper.toRestView(userService.getById(id));
+    public UserRestView getById(@PathVariable(value = "user_id") @Positive long userId) {
+        return userService.getById(userId);
     }
 
     @PatchMapping("{user_id}")
     public UserRestView update(@PathVariable(value = "user_id") @Positive long userId,
                                @RequestBody UserRestCommand userRestCommand) {
-        User user = userMapper.fromRestCommand(userRestCommand);
-        user = userService.update(userId, user);
-        return userMapper.toRestView(user);
+        return userService.update(userId, userRestCommand);
     }
 
     @DeleteMapping
@@ -52,8 +45,8 @@ public class UserController {
     }
 
     @DeleteMapping("{user_id}")
-    public UserRestView deleteById(@PathVariable(value = "user_id") @Positive long id) {
-        return userMapper.toRestView(userService.deleteById(id));
+    public UserRestView deleteById(@PathVariable(value = "user_id") @Positive long userId) {
+        return userService.deleteById(userId);
     }
 
 }

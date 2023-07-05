@@ -1,13 +1,11 @@
-package ru.practicum.shareit.user.address.dto;
+package ru.practicum.shareit.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Value
 @Builder
-public class UserAddressRestView {
-    @JsonProperty("userId")
-    long userId;
+public class UserAddress {
     @JsonProperty("country")
     String country;
     @JsonProperty("region")

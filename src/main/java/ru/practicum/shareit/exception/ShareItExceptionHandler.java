@@ -63,6 +63,13 @@ public class ShareItExceptionHandler extends ResponseEntityExceptionHandler {
                 exception.getMessage());
     }
 
+    @ExceptionHandler(UnsupportedStatusException.class)
+
+    public ResponseEntity<Object> handleUnsupportedStatusException(UnsupportedStatusException exception) {
+        log.warn("Попытка получения объектов 'booking' с указанием неверного статуса");
+        return new ResponseEntity<>(exception.getExceptionRestView(), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(InternalLogicException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponseView handleInternalLogicException(InternalLogicException exception) {

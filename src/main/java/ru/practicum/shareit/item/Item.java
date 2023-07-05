@@ -1,30 +1,29 @@
 package ru.practicum.shareit.item;
 
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import lombok.Value;
-
-import ru.practicum.shareit.common.IdentificableObject;
+import ru.practicum.shareit.item.comment.Comment;
 
 import java.net.URI;
-import java.time.LocalDate;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Value
-@EqualsAndHashCode(callSuper = false)
-@ToString(callSuper = true)
 @Builder(toBuilder = true)
-public class Item extends IdentificableObject {
+public class Item {
+    long id;
     long ownerId;
     String name;
     String description;
-    Boolean isAvailable;
+    Boolean available;
+    ItemBooking nextBooking;
+    ItemBooking lastBooking;
+    List<Comment> comments;
     // Ниже поля, которые отсутствуют в задании и тестах, но которые, как мне кажется, должны быть в логике приложения
     float rent;
     float itemRating;
     URI itemPhotoUri;
-    LocalDate postDate;
-    Set<Long> requestsWithUseIds;
+    LocalDateTime created;
+    LocalDateTime lastModified;
 
 }
