@@ -15,7 +15,7 @@ public class User {
     // Ниже поля, которые отсутствуют в задании и тестах, но которые, как мне кажется, должны быть в логике приложения
     UserAddress address;
     String telephoneNumber;
-    boolean isTelephoneVisible;
+    boolean telephoneVisible;
     URI avatarUri;
     float userRating;   // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим пользовтелям
     LocalDateTime created;

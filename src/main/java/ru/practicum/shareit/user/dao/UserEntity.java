@@ -28,7 +28,7 @@ public class UserEntity {
     @Column(name = "telephone_number")
     private String telephoneNumber;
     @Column(name = "telephone_visible")
-    private boolean isTelephoneVisible;
+    private boolean telephoneVisible;
     @Column(name = "avatar_uri")
     private URI avatarUri;
     @Column(name = "created")

@@ -29,6 +29,6 @@ public class ItemEntity extends UpdatableUserDependedEntity {
     @OneToMany(mappedBy = "item")
     private List<BookingEntity> itemBookings;
     @OneToMany(mappedBy = "item")
-    private List<CommentEntity> itemComments;
+    private List<CommentEntity> comments;
 
 }
