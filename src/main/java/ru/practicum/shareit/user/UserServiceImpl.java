@@ -94,7 +94,8 @@ public class UserServiceImpl implements UserService {
                         savedEmail : user.getEmail())
                 .created(savedRegistrationDate)
                 .build();
-        UserEntity updatedUserEntity = userRepository.save(userMapper.toDbEntity(user));
+        UserEntity userEntity = userMapper.toDbEntity(user);
+        UserEntity updatedUserEntity = userRepository.save(userEntity);
         user = userMapper.fromDbEntity(updatedUserEntity);
         log.info("Обновлены данные пользователя с id'{}'", userId);
         return userMapper.toRestView(user);

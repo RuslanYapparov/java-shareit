@@ -1,6 +1,7 @@
 package ru.practicum.shareit.common;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import ru.practicum.shareit.exception.BadRequestHeaderException;
@@ -45,11 +46,15 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
     }
 
     @Override
-    public List<V> getAll(long userId) {                // Переопределяется в сервисе любой сущности, связанной с User
-        List<T> objects = entitiesToObjectsListTransducer.apply(entityRepository.findAll());
-        log.info("Запрошен список всех сохраненных объектов '{}'. Количество сохраненных объектов - {}",
-                type, objects.size());
-        return objectsToRestViewsListTransducer.apply(objects);
+    public Page<V> getAll(long userId, int from, int size) {            // Переопределяется в сервисе любой сущности,
+        Sort sortByCreatedDate = Sort.by(Sort.Direction.DESC, "created");             // Cвязанной с User
+        Pageable page = PageRequest.of(from, size, sortByCreatedDate);
+        Page<E> entityPage = entityRepository.findAll(page);
+        Page<T> objectPage = entityPage.map(objectMapper::fromDbEntity);
+        log.info("Запрошен постраничный список всех сохраненных объектов '{}'. Количество объектов для отображения " +
+        "на странице - {}, " +
+                "объекты отображаются по порядку с {} по {}", type, size, from + 1, objectPage.getTotalElements());
+        return objectPage.map(objectMapper::toRestView);
     }
 
     @Override

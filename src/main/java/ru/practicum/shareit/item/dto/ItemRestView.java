@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
+
 import ru.practicum.shareit.item.ItemBooking;
 import ru.practicum.shareit.item.comment.Comment;
 
@@ -16,6 +17,8 @@ public class ItemRestView {
     long id;
     @JsonProperty("ownerId")
     long ownerId;
+    @JsonProperty("requestId")
+    long requestId;
     @JsonProperty("name")
     String name;
     @JsonProperty("description")

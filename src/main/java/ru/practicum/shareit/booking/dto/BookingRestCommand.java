@@ -2,7 +2,6 @@ package ru.practicum.shareit.booking.dto;
 
 import lombok.Builder;
 import lombok.Value;
-
 import javax.validation.constraints.*;
 
 import java.time.LocalDateTime;

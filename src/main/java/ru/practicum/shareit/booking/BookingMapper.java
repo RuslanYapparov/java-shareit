@@ -2,6 +2,7 @@ package ru.practicum.shareit.booking;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+
 import ru.practicum.shareit.booking.dao.BookingEntity;
 import ru.practicum.shareit.booking.dto.BookingRestCommand;
 import ru.practicum.shareit.booking.dto.BookingRestView;

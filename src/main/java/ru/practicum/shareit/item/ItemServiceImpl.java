@@ -2,6 +2,10 @@ package ru.practicum.shareit.item;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import ru.practicum.shareit.booking.dao.BookingEntity;
@@ -18,32 +22,36 @@ import ru.practicum.shareit.item.dao.ItemEntity;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemRestCommand;
 import ru.practicum.shareit.item.dto.ItemRestView;
+import ru.practicum.shareit.request.dao.ItemRequestEntity;
+import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dao.UserShort;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestCommand, ItemRestView> implements ItemService {
     private final ItemRepository itemRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
 
     @Autowired
     public ItemServiceImpl(ItemRepository itemRepository,
                            UserRepository userRepository,
+                           CommentRepository commentRepository,
+                           ItemRequestRepository itemRequestRepository,
                            ItemValidator itemValidator,
-                           ItemMapper itemMapper,
-                           CommentRepository commentRepository) {
+                           ItemMapper itemMapper) {
         this.entityRepository = itemRepository;
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
+        this.commentRepository = commentRepository;
+        this.itemRequestRepository = itemRequestRepository;
         this.domainObjectValidator = itemValidator;
         this.objectMapper = itemMapper;
-        this.commentRepository = commentRepository;
         this.type = "item";
     }
 
@@ -53,23 +61,33 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
         itemRestCommand = itemRestCommand.toBuilder()
                 .ownerId(userId)
                 .build();
-        return super.save(userId, itemRestCommand);
+        Item item = objectMapper.fromRestCommand(itemRestCommand);
+        item = domainObjectValidator.validateAndAssignNullFields(item);
+        ItemEntity itemEntity = objectMapper.toDbEntity(item);
+        if (item.getRequestId() != 0L) {
+            ItemRequestEntity itemRequestEntity = itemRequestRepository.findById(item.getRequestId()).orElseThrow(() ->
+                    new BadRequestBodyException("Указанный в теле http-запроса идентификатор программного запроса " +
+                            "на вещь не соответствует ни одному из сохраненных ранее"));
+            itemEntity.setRequest(itemRequestEntity);
+        }
+        itemEntity = entityRepository.save(itemEntity);
+        item = objectMapper.fromDbEntity(itemEntity);
+        log.info("Пользователь с идентификатором id{} сохранил новый объект типа '{}'. Присвоен идентификатор id{}",
+                userId, type, item.getId());
+        return objectMapper.toRestView(item);
     }
 
     @Override
-    public List<ItemRestView> getAll(long userId) {
-        if (userId == 0) {
-            return super.getAll(userId);
-        } else {
-            checkUserExistingAndReturnUserShort(userId);
-            List<ItemEntity> itemEntities = itemRepository.findAllByUserId(userId);
-            List<Item> items = itemEntities.stream()
-                    .map(this::mapItemWithLastAndNextBookings)
-                    .collect(Collectors.toList());
-            log.info("Запрошен список всех сохраненных объектов '{}', принадлежащих пользователю с id'{}'. " +
-                    "Количество сохраненных объектов - {}", type, userId, itemEntities.size());
-            return objectsToRestViewsListTransducer.apply(items);
-        }
+    public Page<ItemRestView> getAll(long userId, int from, int size) {
+        checkUserExistingAndReturnUserShort(userId);
+        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
+        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size, sortById);
+        Page<ItemEntity> itemEntities = itemRepository.findAllByUserId(userId, page);
+        Page<Item> items = itemEntities.map(this::mapItemWithLastAndNextBookings);
+        log.info("Запрошен постраничный список всех сохраненных объектов '{}', принадлежащих пользователю " +
+                "с id'{}'. Количество объектов для отображения на странице - {}, объекты отображаются " +
+                "по порядку с {} по {}", type, userId, size, from + 1, items.getTotalElements());
+        return items.map(objectMapper::toRestView);
     }
 
     @Override
@@ -111,25 +129,23 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public void deleteAll(long userId) {
-        if (userId == 0) {
-            super.deleteAll(userId);
-        } else {
-            checkUserExistingAndReturnUserShort(userId);
-            itemRepository.deleteAllByUserId(userId);
-            log.info("Удалены все объекты '{}' из хранилища, связанные с пользователем с id'{}'", type, userId);
-        }
+        checkUserExistingAndReturnUserShort(userId);
+        itemRepository.deleteAllByUserId(userId);
+        log.info("Удалены все объекты '{}' из хранилища, связанные с пользователем с id'{}'", type, userId);
     }
 
     @Override
-    public List<ItemRestView> searchInNamesAndDescriptionsByText(long userId, String text) {
+    public Page<ItemRestView> searchInNamesAndDescriptionsByText(long userId, String text, int from, int size) {
         checkUserExistingAndReturnUserShort(userId);
-        List<ItemEntity> availableItemEntities = itemRepository
-        .findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrderByIdAsc(text, text).stream()
-                .filter(ItemEntity::isAvailable)
-                .collect(Collectors.toList());
+        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
+        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size, sortById);
+        Page<ItemEntity> availableItemEntities = itemRepository
+                .findAllAvailableBySearchInNamesAndDescriptions(text, page);
+        Page<Item> items = availableItemEntities.map(objectMapper::fromDbEntity);
         log.info("Произведен поиск всех вещей у всех пользователей, в названии и/или описании которых " +
-                "присутствует текст '{}'. Найдено всего {} таких вещей", text, availableItemEntities.size());
-        return objectsToRestViewsListTransducer.apply(entitiesToObjectsListTransducer.apply(availableItemEntities));
+                "присутствует текст '{}'. Количество объектов для отображения на странице - {}, объекты отображаются " +
+                "по порядку с {} по {}", text, size, from + 1, items.getTotalElements());
+        return items.map(objectMapper::toRestView);
     }
 
     @Override

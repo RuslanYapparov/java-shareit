@@ -2,8 +2,12 @@ package ru.practicum.shareit.booking;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
 import ru.practicum.shareit.booking.dao.BookingEntity;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingRestCommand;
@@ -29,14 +33,12 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
     public BookingServiceImpl(BookingRepository bookingRepository,
                               ItemRepository itemRepository,
                               UserRepository userRepository,
-                              BookingMapper bookingMapper,
-                              BookingValidator bookingValidator) {
+                              BookingMapper bookingMapper) {
         this.entityRepository = bookingRepository;
         this.bookingRepository = bookingRepository;
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
         this.objectMapper = bookingMapper;
-        this.domainObjectValidator = bookingValidator;
         this.type = "booking";
     }
 
@@ -82,85 +84,76 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
     }
 
     @Override
-    public List<BookingRestView> getAllForBookerWithStateParameter(long userId, String state) {
+    public Page<BookingRestView> getAllForBookerWithStateParameter(long userId, String state, int from, int size) {
         checkUserExistingAndReturnUserShort(userId);
-        List<Booking> requestedBookings;
+        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size, sortByBookingStart);
+        Page<BookingEntity> requestedBookings;
         switch (state) {
             case "ALL":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByUserId(userId, sortByBookingStart));
+                requestedBookings = bookingRepository.findAllByUserId(userId, page);
                 log.info("Запрошен список всех бронирований пользователя с идентификатором id{}", userId);
                 break;
             case "CURRENT":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllCurrentBookingsForUserById(userId, sortByBookingStart));
+                requestedBookings = bookingRepository.findAllCurrentBookingsForUserById(userId, page);
                 log.info("Запрошен список всех текущих бронирований пользователя с идентификатором id{}", userId);
                 break;
             case "PAST":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllPastBookingsForUserById(userId, sortByBookingStart));
+                requestedBookings = bookingRepository.findAllPastBookingsForUserById(userId, page);
                 log.info("Запрошен список всех прошедших бронирований пользователя с идентификатором id{}", userId);
                 break;
             case "FUTURE":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllFutureBookingsForUserById(userId, sortByBookingStart));
+                requestedBookings = bookingRepository.findAllFutureBookingsForUserById(userId, page);
                 log.info("Запрошен список всех предстоящих бронирований пользователя с идентификатором id{}", userId);
                 break;
             case "WAITING":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByUserIdAndStatus(userId, "WAITING", sortByBookingStart));
+                requestedBookings = bookingRepository.findAllByUserIdAndStatus(userId, "WAITING", page);
                 log.info("Запрошен список всех 'WAITING' бронирований пользователя с идентификатором id{}", userId);
                 break;
             case "REJECTED":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByUserIdAndStatus(userId, "REJECTED", sortByBookingStart));
+                requestedBookings = bookingRepository.findAllByUserIdAndStatus(userId, "REJECTED", page);
                 log.info("Запрошен список всех 'REJECTED' бронирований пользователя с идентификатором id{}", userId);
                 break;
             default:
                 throw new UnsupportedStatusException("Unknown state: " + state);
         }
-        return objectsToRestViewsListTransducer.apply(requestedBookings);
+        return requestedBookings.map(objectMapper::fromDbEntity).map(objectMapper::toRestView);
     }
 
     @Override
-    public List<BookingRestView> getAllForItemOwnerWithStateParameter(long itemOwnerId, String state) {
+    public Page<BookingRestView> getAllForItemOwnerWithStateParameter(
+            long itemOwnerId, String state, int from, int size) {
         checkUserExistingAndReturnUserShort(itemOwnerId);
-        List<Booking> requestedBookings;
+        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size, sortByBookingStart);
+        Page<BookingEntity> requestedBookings;
         switch (state) {
             case "ALL":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByItemUserId(itemOwnerId, sortByBookingStart));
+                requestedBookings = bookingRepository.findAllByItemUserId(itemOwnerId, page);
                 log.info("Запрошен список всех бронирований вещи владельца с идентификатором id{}", itemOwnerId);
                 break;
             case "CURRENT":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllCurrentBookingsForItemOwnerById(itemOwnerId, sortByBookingStart));
+                requestedBookings = bookingRepository.findAllCurrentBookingsForItemOwnerById(itemOwnerId, page);
                 log.info("Запрошен список всех текущих бронирований владельца с идентификатором id{}", itemOwnerId);
                 break;
             case "PAST":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllPastBookingsForItemOwnerById(itemOwnerId, sortByBookingStart));
+                requestedBookings = bookingRepository.findAllPastBookingsForItemOwnerById(itemOwnerId, page);
                 log.info("Запрошен список всех прошедших бронирований владельца с идентификатором id{}", itemOwnerId);
                 break;
             case "FUTURE":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllFutureBookingsForItemOwnerById(itemOwnerId, sortByBookingStart));
+                requestedBookings = bookingRepository.findAllFutureBookingsForItemOwnerById(itemOwnerId, page);
                 log.info("Запрошен список всех предстоящих бронирований владельца с идентификатором id{}", itemOwnerId);
                 break;
             case "WAITING":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByItemUserIdAndStatus(itemOwnerId, "WAITING", sortByBookingStart));
+                requestedBookings = bookingRepository.findAllByItemUserIdAndStatus(itemOwnerId, "WAITING", page);
                 log.info("Запрошен список всех 'WAITING' бронирований владельца с идентификатором id{}", itemOwnerId);
                 break;
             case "REJECTED":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByItemUserIdAndStatus(itemOwnerId, "REJECTED", sortByBookingStart));
+                requestedBookings = bookingRepository.findAllByItemUserIdAndStatus(itemOwnerId, "REJECTED", page);
                 log.info("Запрошен список всех 'REJECTED' бронирований владельца с идентификатором id{}", itemOwnerId);
                 break;
             default:
                 throw new UnsupportedStatusException("Unknown state: " + state);
         }
-        return objectsToRestViewsListTransducer.apply(requestedBookings);
+        return requestedBookings.map(objectMapper::fromDbEntity).map(objectMapper::toRestView);
     }
 
     @Override
