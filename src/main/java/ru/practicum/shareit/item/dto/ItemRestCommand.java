@@ -10,8 +10,6 @@ import javax.validation.constraints.Size;
 @Builder(toBuilder = true)
 public class ItemRestCommand {
     @PositiveOrZero
-    long ownerId;
-    @PositiveOrZero
     long requestId;
     @NotNull
     @NotBlank

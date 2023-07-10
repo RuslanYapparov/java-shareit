@@ -9,7 +9,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import ru.practicum.shareit.common.CrudServiceImpl;
-import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.request.dao.ItemRequestEntity;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestRestCommand;
@@ -17,6 +16,7 @@ import ru.practicum.shareit.request.dto.ItemRequestRestView;
 import ru.practicum.shareit.user.dao.UserRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -24,18 +24,15 @@ public class ItemRequestServiceImpl
         extends CrudServiceImpl<ItemRequestEntity, ItemRequest, ItemRequestRestCommand, ItemRequestRestView>
         implements ItemRequestService {
     private final ItemRequestRepository itemRequestRepository;
-    private final ItemRepository itemRepository;
 
     @Autowired
     public ItemRequestServiceImpl(ItemRequestRepository itemRequestRepository,
                                   UserRepository userRepository,
-                                  ItemRepository itemRepository,
                                   ItemRequestMapper itemRequestMapper
                                   ) {
         this.entityRepository = itemRequestRepository;
         this.itemRequestRepository = itemRequestRepository;
         this.userRepository = userRepository;
-        this.itemRepository = itemRepository;
         this.objectMapper = itemRequestMapper;
         this.type = "request";
     }
@@ -57,7 +54,10 @@ public class ItemRequestServiceImpl
         checkUserExistingAndReturnUserShort(requesterId);
         List<ItemRequestEntity> itemRequestEntities =
                 itemRequestRepository.findAllByUserIdOrderByCreatedDesc(requesterId);
-        return objectsToRestViewsListTransducer.apply(entitiesToObjectsListTransducer.apply(itemRequestEntities));
+        return itemRequestEntities.stream()
+                .map(objectMapper::fromDbEntity)
+                .map(objectMapper::toRestView)
+                .collect(Collectors.toList());
     }
 
     @Override

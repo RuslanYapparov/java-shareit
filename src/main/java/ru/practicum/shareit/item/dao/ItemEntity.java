@@ -11,6 +11,7 @@ import ru.practicum.shareit.request.dao.ItemRequestEntity;
 import java.util.List;
 
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Getter
 @Setter
 @Entity

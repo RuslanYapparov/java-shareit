@@ -1,5 +1,6 @@
 package ru.practicum.shareit.request.dao;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,6 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "requests")
 public class ItemRequestEntity extends UpdatableUserDependedEntity {

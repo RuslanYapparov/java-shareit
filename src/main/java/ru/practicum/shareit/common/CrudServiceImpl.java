@@ -1,5 +1,6 @@
 package ru.practicum.shareit.common;
 
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,11 +11,8 @@ import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dao.UserShort;
 
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 @Slf4j
+@NoArgsConstructor
 public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
         implements CrudService<C, V> {
     // E - тип данных объекта слоя репозитроиев (entity)
@@ -25,16 +23,21 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
     protected UserRepository userRepository;
     protected DomainObjectValidator<T> domainObjectValidator;
     protected ObjectMapper<E, T, C, V> objectMapper;
-    protected Function<List<T>, List<V>> objectsToRestViewsListTransducer = listOfObjects -> listOfObjects.stream()
-            .map(objectMapper::toRestView)
-            .collect(Collectors.toList());
-    protected Function<List<E>, List<T>> entitiesToObjectsListTransducer = listOfEntities -> listOfEntities.stream()
-            .map(objectMapper::fromDbEntity)
-            .collect(Collectors.toList());
     protected String type = "Some_type";
+
+    public CrudServiceImpl(JpaRepository<E, Long> jpaRepository,
+    UserRepository userRepository,
+    DomainObjectValidator<T> objectValidator,
+    ObjectMapper<E, T, C, V> objectMapper) {
+        this.entityRepository = jpaRepository;
+        this.userRepository = userRepository;
+        this.domainObjectValidator = objectValidator;
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public V save(long userId, C commandObject) {       // Переопределяется в сервисе любой сущности, связанной с User
+        checkUserExistingAndReturnUserShort(userId);
         T object = objectMapper.fromRestCommand(commandObject);
         object = domainObjectValidator.validateAndAssignNullFields(object);
         E objectEntity = objectMapper.toDbEntity(object);
@@ -47,7 +50,8 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
 
     @Override
     public Page<V> getAll(long userId, int from, int size) {            // Переопределяется в сервисе любой сущности,
-        Sort sortByCreatedDate = Sort.by(Sort.Direction.DESC, "created");             // Cвязанной с User
+        checkUserExistingAndReturnUserShort(userId);                                             // Cвязанной с User
+        Sort sortByCreatedDate = Sort.by(Sort.Direction.DESC, "created");
         Pageable page = PageRequest.of(from, size, sortByCreatedDate);
         Page<E> entityPage = entityRepository.findAll(page);
         Page<T> objectPage = entityPage.map(objectMapper::fromDbEntity);
@@ -68,7 +72,8 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
 
     @Override
     public V update(long userId, long objectId, C commandObject) {        // Переопределяется в сервисе любой сущности,
-        T object = objectMapper.fromRestCommand(commandObject);                                     // Связанной с User
+        checkUserExistingAndReturnUserShort(userId);                                             // Связанной с User
+        T object = objectMapper.fromRestCommand(commandObject);
         object = domainObjectValidator.validateAndAssignNullFields(object);
         E objectEntity = entityRepository.save(objectMapper.toDbEntity(object));
         object = objectMapper.fromDbEntity(objectEntity);
@@ -79,6 +84,7 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
 
     @Override
     public void deleteAll(long userId) {                // Переопределяется в сервисе любой сущности, связанной с User
+        checkUserExistingAndReturnUserShort(userId);
         long quantity = entityRepository.count();
         entityRepository.deleteAll();
         if (entityRepository.count() != 0) {
@@ -93,7 +99,6 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
     public V deleteById(long userId, long objectId) {
         E objectEntity = checkUserAndObjectExistingAndReturnEntityFromDb(userId, objectId);
         entityRepository.deleteById(objectId);
-        entityRepository.getReferenceById(objectId);
         T object = objectMapper.fromDbEntity(objectEntity);
         log.info("Удален объект '{}' с идентификатором '{}'", type, objectId);
         return objectMapper.toRestView(object);

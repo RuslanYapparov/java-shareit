@@ -20,6 +20,7 @@ import ru.practicum.shareit.user.dao.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -193,7 +194,9 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
                     itemId, savingBookingEnd, savingBookingStart));
         }
         if (itemEntity.getItemBookings() != null) {
-            List<Booking> bookings = entitiesToObjectsListTransducer.apply(itemEntity.getItemBookings());
+            List<Booking> bookings = itemEntity.getItemBookings().stream()
+                    .map(objectMapper::fromDbEntity)
+                    .collect(Collectors.toList());
             if (!bookings.isEmpty()) {
                 boolean isBookingTimeAlreadyTakenByAnotherBooking = bookings.stream()
                         .filter(booking -> BookingStatus.APPROVED.equals(booking.getBookingStatus()))

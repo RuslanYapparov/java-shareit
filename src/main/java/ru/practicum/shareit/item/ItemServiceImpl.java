@@ -28,6 +28,7 @@ import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dao.UserShort;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -58,19 +59,32 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
     @Override
     public ItemRestView save(long userId, ItemRestCommand itemRestCommand) {
         checkUserExistingAndReturnUserShort(userId);
-        itemRestCommand = itemRestCommand.toBuilder()
+        Item item = objectMapper.fromRestCommand(itemRestCommand);
+        item = item.toBuilder()
                 .ownerId(userId)
                 .build();
-        Item item = objectMapper.fromRestCommand(itemRestCommand);
         item = domainObjectValidator.validateAndAssignNullFields(item);
         ItemEntity itemEntity = objectMapper.toDbEntity(item);
-        if (item.getRequestId() != 0L) {
-            ItemRequestEntity itemRequestEntity = itemRequestRepository.findById(item.getRequestId()).orElseThrow(() ->
-                    new BadRequestBodyException("Указанный в теле http-запроса идентификатор программного запроса " +
-                            "на вещь не соответствует ни одному из сохраненных ранее"));
-            itemEntity.setRequest(itemRequestEntity);
+        if (item.getRequestId() == 0L) {
+            itemEntity = entityRepository.save(itemEntity);
+            item = objectMapper.fromDbEntity(itemEntity);
+            log.info("Пользователь с идентификатором id{} сохранил новый объект типа '{}'. Присвоен идентификатор id{}",
+                    userId, type, item.getId());
+            return objectMapper.toRestView(item);
         }
+        ItemRequestEntity itemRequestEntity = itemRequestRepository.findById(item.getRequestId()).orElseThrow(() ->
+                new BadRequestBodyException("Указанный в теле http-запроса идентификатор программного запроса " +
+                        "на вещь не соответствует ни одному из сохраненных ранее"));
+        itemEntity.setRequest(itemRequestEntity);
         itemEntity = entityRepository.save(itemEntity);
+        List<ItemEntity> itemsInRequest = itemRequestEntity.getItems();
+        if (itemsInRequest == null) {
+            itemRequestEntity.setItems(new ArrayList<>(List.of(itemEntity)));
+        } else {
+            itemsInRequest.add(itemEntity);
+            itemRequestEntity.setItems(itemsInRequest);
+        }
+        itemRequestRepository.save(itemRequestEntity);
         item = objectMapper.fromDbEntity(itemEntity);
         log.info("Пользователь с идентификатором id{} сохранил новый объект типа '{}'. Присвоен идентификатор id{}",
                 userId, type, item.getId());
