@@ -20,6 +20,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import ru.practicum.shareit.ShareItApp;
+import ru.practicum.shareit.common.ShareItConstants;
 import ru.practicum.shareit.exception.InternalLogicException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.request.dto.ItemRequestRestCommand;
@@ -44,16 +46,16 @@ public class ItemRequestControllerTest {
             .id(1)
             .requesterId(1)
             .description("Дайте, пожалуйста, мазохинатор")
-            .created(LocalDateTime.now().withNano(0))
-            .lastModified(LocalDateTime.now().withNano(0))
+            .created(ShareItConstants.DEFAULT_LOCAL_DATE_TIME)
+            .lastModified(ShareItConstants.DEFAULT_LOCAL_DATE_TIME)
             .items(new ArrayList<>(List.of(RequestedItem.builder().build())))
             .build();
     private final ItemRequestRestView secondReturnedRequest = ItemRequestRestView.builder()
             .id(2)
             .requesterId(1)
             .description("Одолжу на пару дней аппарат МРТ")
-            .created(LocalDateTime.now().withNano(0))
-            .lastModified(LocalDateTime.now().withNano(0))
+            .created(ShareItConstants.DEFAULT_LOCAL_DATE_TIME)
+            .lastModified(ShareItConstants.DEFAULT_LOCAL_DATE_TIME)
             .items(new ArrayList<>(List.of(RequestedItem.builder().build())))
             .build();
 

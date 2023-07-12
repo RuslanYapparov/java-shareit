@@ -3,6 +3,8 @@ package ru.practicum.shareit.booking;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,7 @@ import ru.practicum.shareit.booking.dto.BookingRestView;
 import ru.practicum.shareit.exception.BadRequestBodyException;
 import ru.practicum.shareit.exception.BadRequestParameterException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
+import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.item.ItemService;
 import ru.practicum.shareit.item.dto.ItemRestCommand;
 import ru.practicum.shareit.item.dto.ItemRestView;
@@ -20,6 +23,7 @@ import ru.practicum.shareit.user.dto.UserRestCommand;
 import ru.practicum.shareit.user.dto.UserRestView;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -187,6 +191,31 @@ public class BookingServiceTest {
         assertThat(objectNotFoundException.getMessage(), equalTo(String.format("Операция изменения статуса " +
                 "бронирования с идентификатором id'%d' отклонена: " +
                 "только владелец вещи может изменять статус", booking.getId())));
+    }
+
+    // Методы сервиса по получению всех бронирований в зависимости от состояния тестируются в BookingRepositoryTest
+    @ParameterizedTest
+    @ValueSource(strings = {"ALL", "CURRENT", "PAST", "FUTURE", "WAITING", "REJECTED"})
+    public void
+    getAllForBookerAndForOwnerWithStateParameter_whenGetCorrectParameter_thenReturnListOfBookingRestViews(String value) {
+        List<BookingRestView> bookingRestViewsForUser = bookingService
+                .getAllForBookerWithStateParameter(secondUser.getId(), value, 0, 10).toList();
+        List<BookingRestView> bookingRestViewsForOwner = bookingService
+                .getAllForItemOwnerWithStateParameter(firstUser.getId(), value, 0, 10).toList();
+
+        assertThat(bookingRestViewsForUser, instanceOf(List.class));
+        assertThat(bookingRestViewsForOwner, instanceOf(List.class));
+    }
+
+    @Test
+    public void getAllForBookerAndForOwnerWithStateParameter_whenGetIncorrectParameter_thenThrowException() {
+        UnsupportedStatusException exception = assertThrows(UnsupportedStatusException.class, () ->
+                bookingService.getAllForItemOwnerWithStateParameter(firstUser.getId(), "SOME_STATE", 0, 10));
+        assertThat(exception.getMessage(), equalTo("Unknown state: SOME_STATE"));
+
+        exception = assertThrows(UnsupportedStatusException.class, () ->
+                bookingService.getAllForBookerWithStateParameter(firstUser.getId(), "SOME_STATE", 0, 10));
+        assertThat(exception.getMessage(), equalTo("Unknown state: SOME_STATE"));
     }
 
 }

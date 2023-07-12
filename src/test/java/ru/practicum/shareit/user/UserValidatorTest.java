@@ -34,4 +34,23 @@ public class UserValidatorTest {
                 "Данное обозначение зарезервино системой", exception.getMessage());
     }
 
+    @Test
+    public void validateAndAssignNullFields_whenGetUserWithNotNullAddress_thenReturnUserWithThisAddress() {
+        UserAddress userAddress = UserAddress.builder()
+                .country("country")
+                .region("region")
+                .cityOrSettlement("city")
+                .cityDistrict("district")
+                .street("street")
+                .houseNumber(1)
+                .build();
+
+        User user = User.builder()
+                .address(userAddress)
+                .build();
+
+        user = userValidator.validateAndAssignNullFields(user);
+        assertEquals(userAddress, user.getAddress());
+    }
+
 }
