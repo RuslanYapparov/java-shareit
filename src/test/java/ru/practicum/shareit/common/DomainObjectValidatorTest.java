@@ -63,8 +63,8 @@ public class DomainObjectValidatorTest {
 
         BadRequestBodyException exception = assertThrows(BadRequestBodyException.class, () ->
                 domainObjectValidator.validateAndAssignNullFields(fooWithNegativeFloat));
-        assertEquals("Невозможно сохранить foo со значением параметра fooFloat '-0,100000'. " +
-                "Значение должно быть положительным числом", exception.getMessage());
+        assertEquals(String.format("Невозможно сохранить foo со значением параметра fooFloat '%f'. " +
+                "Значение должно быть положительным числом", -0.1F), exception.getMessage());
     }
 
     @Test
