@@ -20,7 +20,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import ru.practicum.shareit.ShareItApp;
 import ru.practicum.shareit.common.ShareItConstants;
 import ru.practicum.shareit.exception.InternalLogicException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
@@ -29,7 +28,6 @@ import ru.practicum.shareit.request.dto.ItemRequestRestView;
 import ru.practicum.shareit.request.dto.RequestedItem;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
