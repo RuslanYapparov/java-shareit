@@ -26,8 +26,8 @@ public class ItemRequestRepositoryTest {
     private ItemRequestRepository itemRequestRepository;
 
     private final UserEntity userEntity = initializeUserEntity("user_name", "user_email");
-    private final ItemRequestEntity firstItemRequestEntity = initializeItemRequestEntity(1L, "first description");
-    private final ItemRequestEntity secondItemRequestEntity = initializeItemRequestEntity(1L, "second description");
+    private ItemRequestEntity firstItemRequestEntity;
+    private ItemRequestEntity secondItemRequestEntity;
 
     @BeforeEach
     public void verifyBootstrappingByPersistingUserEntity() {
@@ -39,6 +39,8 @@ public class ItemRequestRepositoryTest {
 
     @Test
     public void save_whenGetItemRequestEntityWithDescription_thenManagingThisEntity() {
+        firstItemRequestEntity = initializeItemRequestEntity();
+        secondItemRequestEntity = initializeItemRequestEntity();
         assertEquals(0L, firstItemRequestEntity.getId());
         assertEquals(0L, secondItemRequestEntity.getId());
         itemRequestRepository.save(firstItemRequestEntity);
@@ -50,20 +52,24 @@ public class ItemRequestRepositoryTest {
 
     @Test
     public void save_whenGetItemRequestEntityWithNullUserId_thenThrowException() {
+        firstItemRequestEntity = initializeItemRequestEntity();
+        firstItemRequestEntity.setUserId(0);
         assertThrows(DataIntegrityViolationException.class,
-                () -> itemRequestRepository.save(initializeItemRequestEntity(0L, "description")));
+                () -> itemRequestRepository.save(firstItemRequestEntity));
     }
 
     @Test
     public void save_whenGetItemRequestEntityWithNullDescription_thenThrowException() {
+        firstItemRequestEntity = initializeItemRequestEntity();
+        firstItemRequestEntity.setDescription(null);
         assertThrows(DataIntegrityViolationException.class,
-                () -> itemRequestRepository.save(initializeItemRequestEntity(1L, null)));
+                () -> itemRequestRepository.save(firstItemRequestEntity));
     }
 
     @Test
     public void findAllByUserIdOrderByCreatedDesc_whenGetUserAndAnotherUserId_thenReturnListOfItemRequestEntities() {
-        firstItemRequestEntity.setUserId(userEntity.getId());
-        secondItemRequestEntity.setUserId(userEntity.getId());
+        firstItemRequestEntity = initializeItemRequestEntity();
+        secondItemRequestEntity = initializeItemRequestEntity();
         itemRequestRepository.save(firstItemRequestEntity);
         itemRequestRepository.save(secondItemRequestEntity);
 
@@ -80,13 +86,11 @@ public class ItemRequestRepositoryTest {
 
     @Test
     public void findAllWithoutUsersRequests_whenGetUserAndAnotherUserId_thenReturnListOfItemRequestEntities() {
-        Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "created"));
-
-        firstItemRequestEntity.setUserId(userEntity.getId());
-        secondItemRequestEntity.setUserId(userEntity.getId());
+        firstItemRequestEntity = initializeItemRequestEntity();
+        secondItemRequestEntity = initializeItemRequestEntity();
         itemRequestRepository.save(firstItemRequestEntity);
         itemRequestRepository.save(secondItemRequestEntity);
-
+        Pageable page = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "created"));
 
         List<ItemRequestEntity> itemRequestEntitiesForUser =
                 itemRequestRepository.findAllWithoutUsersRequests(userEntity.getId(), page).toList();
@@ -100,7 +104,11 @@ public class ItemRequestRepositoryTest {
 
         UserEntity anotherUserEntity = entityManager.persist(
                 initializeUserEntity("another_user_name", "another_user_email"));
-        itemRequestRepository.save(initializeItemRequestEntity(anotherUserEntity.getId(), "another description"));
+        ItemRequestEntity anotherItemRequest = initializeItemRequestEntity();
+        anotherItemRequest.setUserId(anotherUserEntity.getId());
+        anotherItemRequest.setDescription("another description");
+
+        itemRequestRepository.save(anotherItemRequest);
         itemRequestEntitiesForUser = itemRequestRepository
                 .findAllWithoutUsersRequests(userEntity.getId(), page).toList();
         assertFalse(itemRequestEntitiesForUser.isEmpty());
@@ -108,10 +116,10 @@ public class ItemRequestRepositoryTest {
         assertEquals("another description", itemRequestEntitiesForUser.get(0).getDescription());
     }
 
-    private ItemRequestEntity initializeItemRequestEntity(long userId, String description) {
+    private ItemRequestEntity initializeItemRequestEntity() {
         ItemRequestEntity itemRequestEntity = new ItemRequestEntity();
-        itemRequestEntity.setUserId(userId);
-        itemRequestEntity.setDescription(description);
+        itemRequestEntity.setUserId(userEntity.getId());
+        itemRequestEntity.setDescription("description");
         itemRequestEntity.setItems(List.of(new ItemEntity()));
         return itemRequestEntity;
     }

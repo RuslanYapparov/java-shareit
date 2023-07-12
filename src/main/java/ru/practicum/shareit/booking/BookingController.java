@@ -53,14 +53,6 @@ public class BookingController {
         return bookingService.getAllForBookerWithStateParameter(userId, state, from, size).toList();
     }
 
-    @GetMapping("{booking_id}")
-    public BookingRestView getById(
-            @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @PositiveOrZero long userId,
-            @PathVariable(name = "booking_id") @Positive long bookingId) {
-        checkUserIdForNullValue(userId, "получение по идентификатору");
-        return bookingService.getById(userId, bookingId);
-    }
-
     @GetMapping("/owner")
     public List<BookingRestView> getAllWithStateForItemOwner(
             @RequestHeader(value = "X-Sharer-User-Id") @PositiveOrZero long ownerId,
@@ -71,6 +63,16 @@ public class BookingController {
         checkPaginationParameters(from, size);
         return bookingService.getAllForItemOwnerWithStateParameter(ownerId, state, from, size).toList();
     }
+
+    @GetMapping("{booking_id}")
+    public BookingRestView getById(
+            @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @PositiveOrZero long userId,
+            @PathVariable(name = "booking_id") @Positive long bookingId) {
+        checkUserIdForNullValue(userId, "получение по идентификатору");
+        return bookingService.getById(userId, bookingId);
+    }
+
+
 
     private void checkUserIdForNullValue(long userId, String operation) {
         if (userId == 0L) {

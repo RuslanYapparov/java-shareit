@@ -124,6 +124,7 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
         String savedName = itemEntity.getName();
         String savedDescription = itemEntity.getDescription();
         boolean savedAvailable = itemEntity.isAvailable();
+        LocalDateTime created = itemEntity.getCreated();
 
         String updatedName = itemCommand.getName();
         String updatedDescription = itemCommand.getDescription();
@@ -135,6 +136,8 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
         itemEntity.setName((updatedName == null) ? savedName : updatedName);
         itemEntity.setDescription((updatedDescription == null) ? savedDescription : updatedDescription);
         itemEntity.setAvailable((itemCommand.getAvailable() == null) ? savedAvailable : itemCommand.getAvailable());
+        itemEntity.setCreated(created);
+        itemEntity.setLastModified(LocalDateTime.now());
         Item item = objectMapper.fromDbEntity(entityRepository.save(itemEntity));
         log.info("Пользователь с идентификатором id{} обновил данные объекта '{}' с идентификатором id{}",
                 userId, type, itemId);
@@ -171,7 +174,7 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
                         "идентификатором id%d произошла ошибка: объект ранее не был сохранен", type, itemId)));
         boolean canUserComment = itemEntity.getItemBookings().stream()
                 .filter(booking -> "APPROVED".equals(booking.getStatus()))
-                .filter(booking -> authorId == booking.getId())
+                .filter(booking -> authorId == booking.getUserId())
                 .anyMatch(booking -> booking.getStart().isBefore(LocalDateTime.now()));
         if (!canUserComment) {
             throw new BadRequestHeaderException(String.format("Пользователь %s с идентификатором id%d пытался " +
@@ -189,10 +192,18 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
         commentEntity.setItem(itemEntity);
         commentEntity.setText(commentText);
         commentEntity = commentRepository.save(commentEntity);
+        List<CommentEntity> comments = itemEntity.getComments();
+        if (comments == null || comments.isEmpty()) {
+            comments = new ArrayList<>(List.of(commentEntity));
+        } else {
+            comments.add(commentEntity);
+        }
+        itemEntity.setComments(comments);
+        entityRepository.save(itemEntity);
         log.info("Пользователь с идентификатором id{} добавил комментарий {} для вещи {} с идентификатором id{}",
                 authorId, commentText, itemEntity.getName(), itemId);
-        return new Comment(commentEntity.getId(), authorId, authorName, commentText,
-                commentEntity.getCreated(), commentEntity.getLastModified());
+        return Comment.builder().id(commentEntity.getId()).authorId(authorId).authorName(authorName).text(commentText)
+                .created(commentEntity.getCreated()).lastModified(commentEntity.getLastModified()).build();
     }
 
     private Item mapItemWithLastAndNextBookings(ItemEntity itemEntity) {

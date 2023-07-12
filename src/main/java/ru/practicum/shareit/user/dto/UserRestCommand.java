@@ -15,6 +15,7 @@ public class UserRestCommand {
     @NotBlank
     String name;
     @NotNull
+    @NotBlank
     @Email
     String email;
 

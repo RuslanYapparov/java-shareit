@@ -19,6 +19,7 @@ import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.user.dao.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,14 +47,23 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
     @Override
     public BookingRestView save(long userId, BookingRestCommand bookingRestCommand) {
         ItemEntity savedItemEntity = checkBookingRestCommandAndReturnItemEntity(userId, bookingRestCommand);
-        bookingRestCommand = bookingRestCommand.toBuilder().bookerId(userId).build();
+        bookingRestCommand = bookingRestCommand.toBuilder().build();
         Booking booking = objectMapper.fromRestCommand(bookingRestCommand);
         booking = booking.toBuilder()
+                .bookerId(userId)
                 .bookingStatus(BookingStatus.WAITING)
                 .build();
         BookingEntity bookingEntity = objectMapper.toDbEntity(booking);
         bookingEntity.setItem(savedItemEntity);
         bookingEntity = bookingRepository.save(bookingEntity);
+        List<BookingEntity> itemBookings = savedItemEntity.getItemBookings();
+        if (itemBookings == null || itemBookings.isEmpty()) {
+            itemBookings = new ArrayList<>(List.of(bookingEntity));
+        } else {
+            itemBookings.add(bookingEntity);
+        }
+        savedItemEntity.setItemBookings(itemBookings);
+        itemRepository.save(savedItemEntity);
         booking = objectMapper.fromDbEntity(bookingEntity);
         log.info("Пользователь с идентификатором id{} забронировал вещь '{}' с идентификатором id{} в период с {} по {}." +
                         "Объекту '{}' присвоен идентификатор id{}", userId, savedItemEntity.getName(),

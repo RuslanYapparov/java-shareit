@@ -6,8 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
 public interface ItemRepository extends JpaRepository<ItemEntity, Long> {
 
@@ -21,7 +19,5 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long> {
     Page<ItemEntity> findAllAvailableBySearchInNamesAndDescriptions(String text, Pageable page);
 
     void deleteAllByUserId(long ownerId);
-
-    List<ItemEntity> findAllByUserIdAndRequestId(long userId, long requestId);
 
 }

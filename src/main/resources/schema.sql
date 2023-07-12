@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS items (
   request_id INTEGER DEFAULT 0,
   item_name VARCHAR(255) NOT NULL,
   description VARCHAR(1000) NOT NULL,
-  available BOOLEAN,
+  available BOOLEAN NOT NULL,
   rent REAL CHECK(rent >= 0),
   item_rating REAL,
   item_photo_uri TEXT,

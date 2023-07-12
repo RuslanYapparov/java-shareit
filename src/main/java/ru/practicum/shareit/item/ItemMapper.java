@@ -37,12 +37,14 @@ public interface ItemMapper extends ObjectMapper<ItemEntity, Item, ItemRestComma
             return new ArrayList<>();
         }
         return commentEntities.stream()
-                .map(commentEntity -> new Comment(commentEntity.getId(),
-                        commentEntity.getUserId(),
-                        commentEntity.getAuthorName(),
-                        commentEntity.getText(),
-                        commentEntity.getCreated(),
-                        commentEntity.getLastModified()))
+                .map(commentEntity -> Comment.builder()
+                        .id(commentEntity.getId())
+                        .authorId(commentEntity.getUserId())
+                        .authorName(commentEntity.getAuthorName())
+                        .text(commentEntity.getText())
+                        .created(commentEntity.getCreated())
+                        .lastModified(commentEntity.getLastModified())
+                        .build())
                 .collect(Collectors.toList());
     }
 

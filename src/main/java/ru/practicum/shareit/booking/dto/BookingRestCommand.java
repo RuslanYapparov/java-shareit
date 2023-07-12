@@ -9,8 +9,6 @@ import java.time.LocalDateTime;
 @Value
 @Builder(toBuilder = true)
 public class BookingRestCommand {
-    @PositiveOrZero
-    long bookerId;
     @Positive
     long itemId;
     @NotNull
