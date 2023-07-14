@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 public class CrudServiceTest {
-    private static CrudServiceImpl<Foo.Entity, Foo.Domain, Foo.RestCommand, Foo.RestView> crudService;
+    private static TestCrudServiceImpl crudService;
     private static final JpaRepository<Foo.Entity, Long> entityRepository = Mockito.mock(JpaRepository.class);
     private static final UserRepository userRepository = Mockito.mock(UserRepository.class);
     private static final ObjectMapper<Foo.Entity, Foo.Domain, Foo.RestCommand, Foo.RestView> objectMapper =
@@ -66,15 +66,15 @@ public class CrudServiceTest {
 
         Mockito.when(domainObjectValidator.validateAndAssignNullFields(Mockito.any(Foo.Domain.class))).thenReturn(foo);
 
-        crudService = new CrudServiceImpl<>(entityRepository, userRepository, domainObjectValidator, objectMapper);
+        crudService = new TestCrudServiceImpl(entityRepository, userRepository, domainObjectValidator, objectMapper);
     }
 
     @Test
     public void saveAndAllMethods_whenGetIncorrectUserId_thenThrowException() {
         BadRequestHeaderException badRequestHeaderException = assertThrows(BadRequestHeaderException.class,
                 () -> crudService.save(0, fooRestCommand));
-        assertEquals("Не указан идентификатор пользователя-хозяина вещи в заголовке " +
-                "Http-запроса, либо указано значение 0", badRequestHeaderException.getMessage());
+        assertEquals("В заголовке запроса на проведение операции 'сохранение' с данными объекта не передан " +
+                "идентификатор пользователя, либо указан 0", badRequestHeaderException.getMessage());
 
         ObjectNotFoundException objectNotFoundException = assertThrows(ObjectNotFoundException.class,
                 () -> crudService.save(2, fooRestCommand));

@@ -3,13 +3,20 @@ package ru.practicum.shareit.request;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
+import ru.practicum.shareit.exception.BadRequestHeaderException;
+import ru.practicum.shareit.exception.BadRequestParameterException;
+import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.item.ItemService;
 import ru.practicum.shareit.item.dto.ItemRestCommand;
 import ru.practicum.shareit.item.dto.ItemRestView;
@@ -83,6 +90,15 @@ public class ItemRequestServiceTest {
         assertThat(itemRequestRestView.getLastModified(), notNullValue());
         assertThat(itemRequestRestView.getItems(), iterableWithSize(1));
         assertThat(itemRequestRestView.getItems().get(0).getRequestId(), equalTo(firstRequest.getId()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0L, -2L})
+    public void save_whenGetIncorrectUserId_thenThrowException(long userId) {
+        BadRequestHeaderException exception = assertThrows(BadRequestHeaderException.class, () ->
+                itemRequestService.save(userId, new ItemRequestRestCommand()));
+        assertThat(exception.getMessage(), equalTo("В заголовке запроса на проведение операции 'сохранение' " +
+                "с данными объекта не передан идентификатор пользователя, либо указан 0"));
     }
 
     @Test
@@ -162,6 +178,48 @@ public class ItemRequestServiceTest {
         assertThat(allRequestForThirdUserList.get(0), equalTo(fourthRequest));
         assertThat(allRequestForThirdUserList.get(1), equalTo(secondRequest));
         assertThat(allRequestForThirdUserList.get(2).getId(), equalTo(firstRequest.getId()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    public void allGetMethods_whenGetIncorrectParameters_thenThrowException(int value) {
+        BadRequestHeaderException badRequestHeaderException = assertThrows(BadRequestHeaderException.class, () ->
+                itemRequestService.getAll(value, 0, 10));
+        assertThat(badRequestHeaderException. getMessage(), equalTo("В заголовке запроса на " +
+                "проведение операции 'получение всех запросов от пользователей' с данными объекта не передан " +
+                "идентификатор пользователя, либо указан 0"));
+
+        badRequestHeaderException = assertThrows(BadRequestHeaderException.class, () ->
+                itemRequestService.getAllRequestsOfRequester(value));
+        assertThat(badRequestHeaderException. getMessage(), equalTo("В заголовке запроса на " +
+                "проведение операции 'получение всех запросов, оформленных пользователем' с данными объекта " +
+                "не передан идентификатор пользователя, либо указан 0"));
+
+        badRequestHeaderException = assertThrows(BadRequestHeaderException.class, () ->
+                itemRequestService.getById(value, firstItem.getId()));
+        assertThat(badRequestHeaderException.getMessage(), equalTo("В заголовке запроса на " +
+                "проведение операции 'получение по идентификатору' с данными объекта " +
+                "не передан идентификатор пользователя, либо указан 0"));
+
+        ObjectNotFoundException objectNotFoundException = assertThrows(ObjectNotFoundException.class, () ->
+                itemRequestService.getById(firstUser.getId(), value));
+        assertThat(objectNotFoundException.getMessage(), equalTo(String.format("В ходе выполнения операции над " +
+                "объектом 'request' с идентификатором id%d произошла ошибка: объект ранее не был сохранен", value)));
+
+        BadRequestParameterException badRequestParameterException = assertThrows(BadRequestParameterException.class,
+                () -> itemRequestService.getAll(firstUser.getId(), 0, value));
+        assertThat(badRequestParameterException.getMessage(), equalTo("В параметре запроса указано неверное " +
+                "значение количества отображаемых элементов, равное '" + value + "'. Значение данного параметра не " +
+                "должно быть меньше, чем 1"));
+    }
+
+    @Test
+    public void getAll_whenGetIncorrectFromParameter_thenThrowException() {
+        BadRequestParameterException badRequestParameterException = assertThrows(BadRequestParameterException.class,
+                () -> itemRequestService.getAll(firstUser.getId(), -1, 10));
+        assertThat(badRequestParameterException.getMessage(), equalTo("В параметре запроса указано неверное " +
+                "значение порядкового номера первого отображаемого элемента '-1'. Значение данного параметра " +
+                "не должно быть меньше 0"));
     }
 
 }

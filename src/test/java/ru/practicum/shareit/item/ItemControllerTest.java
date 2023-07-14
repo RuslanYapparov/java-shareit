@@ -20,8 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -234,6 +233,21 @@ public class ItemControllerTest {
         // Выглядит довольно странно, но пока нашел только такой способ приведения списков объектов к проверяемому варианту
         verify(itemService, Mockito.times(1))
                 .searchInNamesAndDescriptionsByText(1L, "text",0, 20);
+    }
+
+    @Test
+    public void searchInItemsNamesAndDescriptionByText_whenGetBlankText_thenReturnEmptyListOfRestViewObject()
+            throws Exception {
+        mvc.perform(get("/items/search")
+                        .header("X-Sharer-User-Id", 1L)
+                        .param("text", "")
+                        .param("from", "0")
+                        .param("size", "20")
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", is(emptyIterable())));
     }
 
     @Test

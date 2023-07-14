@@ -21,7 +21,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ru.practicum.shareit.common.ShareItConstants;
-import ru.practicum.shareit.exception.InternalLogicException;
 import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.request.dto.ItemRequestRestCommand;
 import ru.practicum.shareit.request.dto.ItemRequestRestView;
@@ -146,25 +145,6 @@ public class ItemRequestControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = {0L, -2L})
-    public void save_whenGetIncorrectUserId_thenThrowException(long userId) throws Exception {
-        when(itemRequestService.save(Mockito.anyLong(), Mockito.any(ItemRequestRestCommand.class)))
-                .thenThrow(new ObjectNotFoundException("Это исключение не должно появиться"));
-
-        mvc.perform(post("/requests")
-                        .header("X-Sharer-User-Id", userId)
-                        .content(objectMapper.writeValueAsString(initializeNewItemRequestRestCommand("request")))
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.statusCode", is(400), Integer.class));
-
-        verify(itemRequestService, Mockito.never())
-                .save(Mockito.anyLong(), Mockito.any(ItemRequestRestCommand.class));
-    }
-
-    @ParameterizedTest
     @ValueSource(strings = {"", " ", "  ", "\t", "\n", "\r"})
     @NullSource
     public void save_whenGetIncorrectRestCommand_thenThrowException(String description) throws Exception {
@@ -202,91 +182,6 @@ public class ItemRequestControllerTest {
 
         verify(itemRequestService, Mockito.never())
                 .save(Mockito.anyLong(), Mockito.any(ItemRequestRestCommand.class));
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {0, -1})
-    public void getAllAndGetAllRequestsOfRequester_whenGetIncorrectParameters_thenThrowException(int value)
-            throws Exception {
-        when(itemRequestService.getAllRequestsOfRequester(Mockito.anyLong()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
-        when(itemRequestService.getAll(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
-
-        mvc.perform(get("/requests")
-                        .header("X-Sharer-User-Id", value)
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.statusCode", is(400), Integer.class));
-        mvc.perform(get("/requests/all")
-                        .header("X-Sharer-User-Id", value)
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.statusCode", is(400), Integer.class));
-        mvc.perform(get("/requests/all")
-                        .header("X-Sharer-User-Id", 1L)
-                        .param("size", String.valueOf(value))
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.statusCode", is(400), Integer.class))
-                .andExpect(jsonPath("$.exception", is("BadRequestParameterException"), String.class));
-
-        verify(itemRequestService, Mockito.never())
-                .getAllRequestsOfRequester(Mockito.anyLong());
-        verify(itemRequestService, Mockito.never())
-                .getAll(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt());
-    }
-
-
-
-    @Test
-    public void getAll_whenGetIncorrectFromParameter_thenThrowException() throws Exception {
-        when(itemRequestService.getAll(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
-
-        mvc.perform(get("/requests/all")
-                        .header("X-Sharer-User-Id", 1L)
-                        .param("from", "-1")
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.statusCode", is(400), Integer.class))
-                .andExpect(jsonPath("$.exception", is("BadRequestParameterException"), String.class));
-
-        verify(itemRequestService, Mockito.never())
-                .getAll(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt());
-    }
-
-    @ParameterizedTest
-    @ValueSource(longs = {0, -1})
-    public void getById_whenGetIncorrectArguments_thenThrowException(long value) throws Exception {
-        when(itemRequestService.getById(Mockito.anyLong(), Mockito.anyLong()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
-
-        mvc.perform(get("/requests/{request_id}", String.valueOf(value))
-                        .header("X-Sharer-User-Id", 1L)
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.statusCode", is(400), Integer.class));
-        mvc.perform(get("/requests/{request_id}", 1L)
-                        .header("X-Sharer-User-Id", value)
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.statusCode", is(400), Integer.class));
-
-        verify(itemRequestService, Mockito.never())
-                .getById(Mockito.anyLong(), Mockito.anyLong());
     }
 
     private ItemRequestRestCommand initializeNewItemRequestRestCommand(String description) {

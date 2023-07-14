@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import ru.practicum.shareit.common.CrudServiceImpl;
+import ru.practicum.shareit.common.MethodParameterValidator;
 import ru.practicum.shareit.request.dao.ItemRequestEntity;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestRestCommand;
@@ -39,7 +40,8 @@ public class ItemRequestServiceImpl
 
     @Override
     public ItemRequestRestView save(long userId, ItemRequestRestCommand itemRequestRestCommand) {
-        checkUserExistingAndReturnUserShort(userId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "сохранение");
+        checkExistingAndReturnUserShort(userId);
         ItemRequest itemRequest = objectMapper.fromRestCommand(itemRequestRestCommand);
         itemRequest = itemRequest.toBuilder()
                 .requesterId(userId)
@@ -51,7 +53,9 @@ public class ItemRequestServiceImpl
 
     @Override
     public List<ItemRequestRestView> getAllRequestsOfRequester(long requesterId) {
-        checkUserExistingAndReturnUserShort(requesterId);
+        MethodParameterValidator.checkUserIdForNullValue(
+                requesterId, "получение всех запросов, оформленных пользователем");
+        checkExistingAndReturnUserShort(requesterId);
         List<ItemRequestEntity> itemRequestEntities =
                 itemRequestRepository.findAllByUserIdOrderByCreatedDesc(requesterId);
         return itemRequestEntities.stream()
@@ -62,8 +66,10 @@ public class ItemRequestServiceImpl
 
     @Override
     public Page<ItemRequestRestView> getAll(long userId, int from, int size) {
+        MethodParameterValidator.checkUserIdForNullValue(userId, "получение всех запросов от пользователей");
+        MethodParameterValidator.checkPaginationParameters(from, size);
         Sort sortByCreatedDate = Sort.by(Sort.Direction.DESC, "created");
-        Pageable page = PageRequest.of(from, size, sortByCreatedDate);
+        Pageable page = PageRequest.of(from / size, size, sortByCreatedDate);
         Page<ItemRequestEntity> itemRequestEntityPage = itemRequestRepository.findAllWithoutUsersRequests(userId, page);
         Page<ItemRequest> objectPage = itemRequestEntityPage.map(objectMapper::fromDbEntity);
         log.info("Запрошен постраничный список всех сохраненных объектов '{}'. Количество объектов для отображения " +

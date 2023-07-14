@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import ru.practicum.shareit.booking.dao.BookingEntity;
 import ru.practicum.shareit.common.CrudServiceImpl;
+import ru.practicum.shareit.common.MethodParameterValidator;
 import ru.practicum.shareit.common.ShareItConstants;
 import ru.practicum.shareit.exception.BadRequestBodyException;
 import ru.practicum.shareit.exception.BadRequestHeaderException;
@@ -58,7 +59,8 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public ItemRestView save(long userId, ItemRestCommand itemRestCommand) {
-        checkUserExistingAndReturnUserShort(userId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "сохранение");
+        checkExistingAndReturnUserShort(userId);
         Item item = objectMapper.fromRestCommand(itemRestCommand);
         item = item.toBuilder()
                 .ownerId(userId)
@@ -93,9 +95,11 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public Page<ItemRestView> getAll(long userId, int from, int size) {
-        checkUserExistingAndReturnUserShort(userId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "получение всех объектов, сохраненных пользователем");
+        MethodParameterValidator.checkPaginationParameters(from, size);
+        checkExistingAndReturnUserShort(userId);
         Sort sortById = Sort.by(Sort.Direction.ASC, "id");
-        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size, sortById);
+        Pageable page = PageRequest.of(from / size, size, sortById);
         Page<ItemEntity> itemEntities = itemRepository.findAllByUserId(userId, page);
         Page<Item> items = itemEntities.map(this::mapItemWithLastAndNextBookings);
         log.info("Запрошен постраничный список всех сохраненных объектов '{}', принадлежащих пользователю " +
@@ -106,7 +110,9 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public ItemRestView getById(long userId, long itemId) {
-        ItemEntity itemEntity = checkUserAndObjectExistingAndReturnEntityFromDb(userId, itemId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "получение");
+        checkExistingAndReturnUserShort(userId);
+        ItemEntity itemEntity = checkExistingAndReturnEntity(itemId);
         Item item;
         if (userId == itemEntity.getUserId()) {
             item = mapItemWithLastAndNextBookings(itemEntity);
@@ -120,7 +126,9 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public ItemRestView update(long userId, long itemId, ItemRestCommand itemCommand) {
-        ItemEntity itemEntity = checkUserAndObjectExistingAndReturnEntityFromDb(userId, itemId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "обновление");
+        checkExistingAndReturnUserShort(userId);
+        ItemEntity itemEntity = checkExistingAndReturnEntity(itemId);
         String savedName = itemEntity.getName();
         String savedDescription = itemEntity.getDescription();
         boolean savedAvailable = itemEntity.isAvailable();
@@ -146,16 +154,19 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public void deleteAll(long userId) {
-        checkUserExistingAndReturnUserShort(userId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "удаление всех объектов, сохраненных пользователем");
+        checkExistingAndReturnUserShort(userId);
         itemRepository.deleteAllByUserId(userId);
         log.info("Удалены все объекты '{}' из хранилища, связанные с пользователем с id'{}'", type, userId);
     }
 
     @Override
     public Page<ItemRestView> searchInNamesAndDescriptionsByText(long userId, String text, int from, int size) {
-        checkUserExistingAndReturnUserShort(userId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "поиск по имени и описанию");
+        MethodParameterValidator.checkPaginationParameters(from, size);
+        checkExistingAndReturnUserShort(userId);
         Sort sortById = Sort.by(Sort.Direction.ASC, "id");
-        Pageable page = PageRequest.of(from > 0 ? from / size : 0, size, sortById);
+        Pageable page = PageRequest.of(from / size, size, sortById);
         Page<ItemEntity> availableItemEntities = itemRepository
                 .findAllAvailableBySearchInNamesAndDescriptions(text, page);
         Page<Item> items = availableItemEntities.map(objectMapper::fromDbEntity);
@@ -167,7 +178,8 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public Comment addCommentToItem(long authorId, long itemId, CommentRestCommand commentRestCommand) {
-        UserShort author = checkUserExistingAndReturnUserShort(authorId);
+        MethodParameterValidator.checkUserIdForNullValue(authorId, "сохранение нового комментария");
+        UserShort author = checkExistingAndReturnUserShort(authorId);
         String authorName = author.getName();
         ItemEntity itemEntity = entityRepository.findById(itemId).orElseThrow(() ->
                 new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +

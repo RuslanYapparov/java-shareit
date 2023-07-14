@@ -9,7 +9,6 @@ import javax.validation.constraints.PositiveOrZero;
 
 import ru.practicum.shareit.booking.dto.BookingRestCommand;
 import ru.practicum.shareit.booking.dto.BookingRestView;
-import ru.practicum.shareit.exception.BadRequestHeaderException;
 import ru.practicum.shareit.exception.BadRequestParameterException;
 
 import java.util.List;
@@ -25,7 +24,6 @@ public class BookingController {
     public BookingRestView save(
             @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @PositiveOrZero long userId,
             @RequestBody @Valid BookingRestCommand bookingRestCommand) {
-        checkUserIdForNullValue(userId, "сохранение");
         return bookingService.save(userId, bookingRestCommand);
     }
 
@@ -34,7 +32,6 @@ public class BookingController {
             @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @PositiveOrZero long userId,
             @PathVariable(name = "booking_id") @Positive long bookingId,
             @RequestParam(name = "approved", defaultValue = "null") Boolean isApproved) {
-        checkUserIdForNullValue(userId, "изменение статуса");
         if (isApproved == null) {
             throw new BadRequestParameterException("В запросе на изменение статуса бронирования не указано " +
                     "подтверждено оно или нет");
@@ -48,8 +45,6 @@ public class BookingController {
             @RequestParam(name = "state", defaultValue = "ALL") String state,
             @RequestParam(name = "from", defaultValue = "0") int from,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-        checkUserIdForNullValue(userId, "получение всех бронирований, оформленных пользователем");
-        checkPaginationParameters(from, size);
         return bookingService.getAllForBookerWithStateParameter(userId, state, from, size).toList();
     }
 
@@ -59,8 +54,6 @@ public class BookingController {
             @RequestParam(name = "state", defaultValue = "ALL") String state,
             @RequestParam(name = "from", defaultValue = "0") int from,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-        checkUserIdForNullValue(ownerId, "получение всех бронирований хозяином вещи");
-        checkPaginationParameters(from, size);
         return bookingService.getAllForItemOwnerWithStateParameter(ownerId, state, from, size).toList();
     }
 
@@ -68,28 +61,7 @@ public class BookingController {
     public BookingRestView getById(
             @RequestHeader(value = "X-Sharer-User-Id", defaultValue = "0") @PositiveOrZero long userId,
             @PathVariable(name = "booking_id") @Positive long bookingId) {
-        checkUserIdForNullValue(userId, "получение по идентификатору");
         return bookingService.getById(userId, bookingId);
-    }
-
-
-
-    private void checkUserIdForNullValue(long userId, String operation) {
-        if (userId == 0L) {
-            throw new BadRequestHeaderException(String.format("В заголовке запроса на проведение операции '%s' " +
-                    "с данными объекта 'бронирование' не передан идентификатор пользователя, либо указан 0", operation));
-        }
-    }
-
-    private void checkPaginationParameters(int from, int size) {
-        if (from < 0) {
-            throw new BadRequestParameterException("В параметре запроса указано неверное значение порядкового номера " +
-                    "первого отображаемого элемента '" + from + "'. Значение данного параметра не должно быть меньше 0");
-        }
-        if (size <= 0) {
-            throw new BadRequestParameterException("В параметре запроса указано неверное значение количества " +
-                    "отображаемых элементов, равное '" + size + "'. Значение данного параметра не должно быть меньше, чем 1");
-        }
     }
 
 }
