@@ -2,6 +2,7 @@ package ru.practicum.shareit.item;
 
 import lombok.Builder;
 import lombok.Value;
+
 import ru.practicum.shareit.item.comment.Comment;
 
 import java.net.URI;
@@ -13,6 +14,7 @@ import java.util.List;
 public class Item {
     long id;
     long ownerId;
+    long requestId;
     String name;
     String description;
     Boolean available;

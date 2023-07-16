@@ -14,6 +14,7 @@ import ru.practicum.shareit.user.dto.UserRestCommand;
 import ru.practicum.shareit.user.dto.UserRestView;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,6 +64,7 @@ public class UserServiceImpl implements UserService {
         List<UserEntity> users = userRepository.findAll();
         log.info("Запрошен список всех сохраненных пользователей. " +
                 "Количество сохраненных пользователей - {}", users.size());
+        users.sort(Comparator.comparingLong(UserEntity::getId));
         return userRestViewListMapper.apply(userListMapper.apply(users));
     }
 
@@ -93,8 +95,10 @@ public class UserServiceImpl implements UserService {
                 .email(ShareItConstants.NOT_ASSIGNED.equals(user.getEmail()) ?
                         savedEmail : user.getEmail())
                 .created(savedRegistrationDate)
+                .lastModified(LocalDateTime.now())
                 .build();
-        UserEntity updatedUserEntity = userRepository.save(userMapper.toDbEntity(user));
+        UserEntity userEntity = userMapper.toDbEntity(user);
+        UserEntity updatedUserEntity = userRepository.save(userEntity);
         user = userMapper.fromDbEntity(updatedUserEntity);
         log.info("Обновлены данные пользователя с id'{}'", userId);
         return userMapper.toRestView(user);

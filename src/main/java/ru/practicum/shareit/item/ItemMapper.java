@@ -3,6 +3,7 @@ package ru.practicum.shareit.item;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+
 import ru.practicum.shareit.common.ObjectMapper;
 import ru.practicum.shareit.item.comment.Comment;
 import ru.practicum.shareit.item.comment.dao.CommentEntity;
@@ -19,11 +20,15 @@ public interface ItemMapper extends ObjectMapper<ItemEntity, Item, ItemRestComma
 
     @Override
     @Mapping(target = "userId", source = "ownerId")
+    @Mapping(target = "itemPhotoUri", expression = "java(item.getItemPhotoUri().getPath())")
     ItemEntity toDbEntity(Item item);
 
     @Override
     @Mapping(target = "comments", source = "comments", qualifiedByName = "mapListOfComments")
+    @Mapping(target = "itemPhotoUri", expression = "java(java.net.URI.create(itemEntity.getItemPhotoUri()))")
     @Mapping(target = "ownerId", source = "userId")
+    @Mapping(target = "requestId",
+            expression = "java(itemEntity.getRequest() == null ? 0L : itemEntity.getRequest().getId())")
     Item fromDbEntity(ItemEntity itemEntity);
 
     @Named("mapListOfComments")
@@ -32,12 +37,14 @@ public interface ItemMapper extends ObjectMapper<ItemEntity, Item, ItemRestComma
             return new ArrayList<>();
         }
         return commentEntities.stream()
-                .map(commentEntity -> new Comment(commentEntity.getId(),
-                        commentEntity.getUserId(),
-                        commentEntity.getAuthorName(),
-                        commentEntity.getText(),
-                        commentEntity.getCreated(),
-                        commentEntity.getLastModified()))
+                .map(commentEntity -> Comment.builder()
+                        .id(commentEntity.getId())
+                        .authorId(commentEntity.getUserId())
+                        .authorName(commentEntity.getAuthorName())
+                        .text(commentEntity.getText())
+                        .created(commentEntity.getCreated())
+                        .lastModified(commentEntity.getLastModified())
+                        .build())
                 .collect(Collectors.toList());
     }
 

@@ -2,7 +2,10 @@ package ru.practicum.shareit.booking;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+
 import ru.practicum.shareit.booking.dao.BookingEntity;
+import ru.practicum.shareit.booking.dto.BookedItem;
+import ru.practicum.shareit.booking.dto.Booker;
 import ru.practicum.shareit.booking.dto.BookingRestCommand;
 import ru.practicum.shareit.booking.dto.BookingRestView;
 import ru.practicum.shareit.common.ObjectMapper;
@@ -11,10 +14,8 @@ import ru.practicum.shareit.common.ObjectMapper;
 public interface BookingMapper extends ObjectMapper<BookingEntity, Booking, BookingRestCommand, BookingRestView> {
 
     @Override
-    @Mapping(target = "booker", expression = "java(new ru.practicum.shareit.booking.dto." +
-            "Booker(booking.getBookerId()))")
-    @Mapping(target = "item", expression = "java(new ru.practicum.shareit.booking.dto." +
-            "BookedItem(booking.getItemId(), booking.getItemName()))")
+    @Mapping(target = "booker", source = "booking")
+    @Mapping(target = "item", source = "booking")
     @Mapping(target = "status", expression = "java(booking.getBookingStatus().name())")
     BookingRestView toRestView(Booking booking);
 
@@ -30,5 +31,12 @@ public interface BookingMapper extends ObjectMapper<BookingEntity, Booking, Book
     @Mapping(target = "status", expression = "java(booking.getBookingStatus().name())")
     @Mapping(target = "userId", source = "bookerId")
     BookingEntity toDbEntity(Booking booking);
+
+    @Mapping(target = "id", source = "itemId")
+    @Mapping(target = "name", source = "itemName")
+    BookedItem toBookedItem(Booking booking);
+
+    @Mapping(target = "id", source = "bookerId")
+    Booker toBooker(Booking booking);
 
 }

@@ -1,20 +1,17 @@
 package ru.practicum.shareit.common;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
+@EqualsAndHashCode
 @Getter
 @Setter
 public abstract class UpdatableUserDependedEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    protected long id;
     @Column(name = "user_id")
     @JoinColumn(referencedColumnName = "users.user_id")
     protected long userId;
@@ -22,7 +19,9 @@ public abstract class UpdatableUserDependedEntity {
     @CreationTimestamp
     protected LocalDateTime created;
     @Column(name = "last_modified")
-    @UpdateTimestamp
+    @CreationTimestamp
     protected LocalDateTime lastModified;
+
+    protected abstract long getId();
 
 }

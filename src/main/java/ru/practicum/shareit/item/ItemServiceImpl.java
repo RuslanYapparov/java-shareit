@@ -2,10 +2,15 @@ package ru.practicum.shareit.item;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import ru.practicum.shareit.booking.dao.BookingEntity;
 import ru.practicum.shareit.common.CrudServiceImpl;
+import ru.practicum.shareit.common.MethodParameterValidator;
 import ru.practicum.shareit.common.ShareItConstants;
 import ru.practicum.shareit.exception.BadRequestBodyException;
 import ru.practicum.shareit.exception.BadRequestHeaderException;
@@ -18,63 +23,96 @@ import ru.practicum.shareit.item.dao.ItemEntity;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemRestCommand;
 import ru.practicum.shareit.item.dto.ItemRestView;
+import ru.practicum.shareit.request.dao.ItemRequestEntity;
+import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dao.UserShort;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestCommand, ItemRestView> implements ItemService {
     private final ItemRepository itemRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
 
     @Autowired
     public ItemServiceImpl(ItemRepository itemRepository,
                            UserRepository userRepository,
+                           CommentRepository commentRepository,
+                           ItemRequestRepository itemRequestRepository,
                            ItemValidator itemValidator,
-                           ItemMapper itemMapper,
-                           CommentRepository commentRepository) {
+                           ItemMapper itemMapper) {
         this.entityRepository = itemRepository;
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
+        this.commentRepository = commentRepository;
+        this.itemRequestRepository = itemRequestRepository;
         this.domainObjectValidator = itemValidator;
         this.objectMapper = itemMapper;
-        this.commentRepository = commentRepository;
         this.type = "item";
     }
 
     @Override
     public ItemRestView save(long userId, ItemRestCommand itemRestCommand) {
-        checkUserExistingAndReturnUserShort(userId);
-        itemRestCommand = itemRestCommand.toBuilder()
+        MethodParameterValidator.checkUserIdForNullValue(userId, "сохранение");
+        checkExistingAndReturnUserShort(userId);
+        Item item = objectMapper.fromRestCommand(itemRestCommand);
+        item = item.toBuilder()
                 .ownerId(userId)
                 .build();
-        return super.save(userId, itemRestCommand);
+        item = domainObjectValidator.validateAndAssignNullFields(item);
+        ItemEntity itemEntity = objectMapper.toDbEntity(item);
+        if (item.getRequestId() == 0L) {
+            itemEntity = entityRepository.save(itemEntity);
+            item = objectMapper.fromDbEntity(itemEntity);
+            log.info("Пользователь с идентификатором id{} сохранил новый объект типа '{}'. Присвоен идентификатор id{}",
+                    userId, type, item.getId());
+            return objectMapper.toRestView(item);
+        }
+        ItemRequestEntity itemRequestEntity = itemRequestRepository.findById(item.getRequestId()).orElseThrow(() ->
+                new BadRequestBodyException("Указанный в теле http-запроса идентификатор программного запроса " +
+                        "на вещь не соответствует ни одному из сохраненных ранее"));
+        itemEntity.setRequest(itemRequestEntity);
+        itemEntity = entityRepository.save(itemEntity);
+        List<ItemEntity> itemsInRequest = itemRequestEntity.getItems();
+        if (itemsInRequest == null) {
+            itemRequestEntity.setItems(new ArrayList<>(List.of(itemEntity)));
+        } else {
+            itemsInRequest.add(itemEntity);
+            itemRequestEntity.setItems(itemsInRequest);
+        }
+        itemRequestRepository.save(itemRequestEntity);
+        item = objectMapper.fromDbEntity(itemEntity);
+        log.info("Пользователь с идентификатором id{} сохранил новый объект типа '{}'. Присвоен идентификатор id{}",
+                userId, type, item.getId());
+        return objectMapper.toRestView(item);
     }
 
     @Override
-    public List<ItemRestView> getAll(long userId) {
-        if (userId == 0) {
-            return super.getAll(userId);
-        } else {
-            checkUserExistingAndReturnUserShort(userId);
-            List<ItemEntity> itemEntities = itemRepository.findAllByUserId(userId);
-            List<Item> items = itemEntities.stream()
-                    .map(this::mapItemWithLastAndNextBookings)
-                    .collect(Collectors.toList());
-            log.info("Запрошен список всех сохраненных объектов '{}', принадлежащих пользователю с id'{}'. " +
-                    "Количество сохраненных объектов - {}", type, userId, itemEntities.size());
-            return objectsToRestViewsListTransducer.apply(items);
-        }
+    public Page<ItemRestView> getAll(long userId, int from, int size) {
+        MethodParameterValidator.checkUserIdForNullValue(userId, "получение всех объектов, сохраненных пользователем");
+        MethodParameterValidator.checkPaginationParameters(from, size);
+        checkExistingAndReturnUserShort(userId);
+        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
+        Pageable page = PageRequest.of(from / size, size, sortById);
+        Page<ItemEntity> itemEntities = itemRepository.findAllByUserId(userId, page);
+        Page<Item> items = itemEntities.map(this::mapItemWithLastAndNextBookings);
+        log.info("Запрошен постраничный список всех сохраненных объектов '{}', принадлежащих пользователю " +
+                "с id'{}'. Количество объектов для отображения на странице - {}, объекты отображаются " +
+                "по порядку с {} по {}", type, userId, size, from + 1, items.getTotalElements());
+        return items.map(objectMapper::toRestView);
     }
 
     @Override
     public ItemRestView getById(long userId, long itemId) {
-        ItemEntity itemEntity = checkUserAndObjectExistingAndReturnEntityFromDb(userId, itemId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "получение");
+        checkExistingAndReturnUserShort(userId);
+        ItemEntity itemEntity = checkExistingAndReturnEntity(itemId);
         Item item;
         if (userId == itemEntity.getUserId()) {
             item = mapItemWithLastAndNextBookings(itemEntity);
@@ -88,10 +126,13 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public ItemRestView update(long userId, long itemId, ItemRestCommand itemCommand) {
-        ItemEntity itemEntity = checkUserAndObjectExistingAndReturnEntityFromDb(userId, itemId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "обновление");
+        checkExistingAndReturnUserShort(userId);
+        ItemEntity itemEntity = checkExistingAndReturnEntity(itemId);
         String savedName = itemEntity.getName();
         String savedDescription = itemEntity.getDescription();
         boolean savedAvailable = itemEntity.isAvailable();
+        LocalDateTime created = itemEntity.getCreated();
 
         String updatedName = itemCommand.getName();
         String updatedDescription = itemCommand.getDescription();
@@ -103,6 +144,8 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
         itemEntity.setName((updatedName == null) ? savedName : updatedName);
         itemEntity.setDescription((updatedDescription == null) ? savedDescription : updatedDescription);
         itemEntity.setAvailable((itemCommand.getAvailable() == null) ? savedAvailable : itemCommand.getAvailable());
+        itemEntity.setCreated(created);
+        itemEntity.setLastModified(LocalDateTime.now());
         Item item = objectMapper.fromDbEntity(entityRepository.save(itemEntity));
         log.info("Пользователь с идентификатором id{} обновил данные объекта '{}' с идентификатором id{}",
                 userId, type, itemId);
@@ -111,37 +154,39 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
 
     @Override
     public void deleteAll(long userId) {
-        if (userId == 0) {
-            super.deleteAll(userId);
-        } else {
-            checkUserExistingAndReturnUserShort(userId);
-            itemRepository.deleteAllByUserId(userId);
-            log.info("Удалены все объекты '{}' из хранилища, связанные с пользователем с id'{}'", type, userId);
-        }
+        MethodParameterValidator.checkUserIdForNullValue(userId, "удаление всех объектов, сохраненных пользователем");
+        checkExistingAndReturnUserShort(userId);
+        itemRepository.deleteAllByUserId(userId);
+        log.info("Удалены все объекты '{}' из хранилища, связанные с пользователем с id'{}'", type, userId);
     }
 
     @Override
-    public List<ItemRestView> searchInNamesAndDescriptionsByText(long userId, String text) {
-        checkUserExistingAndReturnUserShort(userId);
-        List<ItemEntity> availableItemEntities = itemRepository
-        .findAllByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrderByIdAsc(text, text).stream()
-                .filter(ItemEntity::isAvailable)
-                .collect(Collectors.toList());
+    public Page<ItemRestView> searchInNamesAndDescriptionsByText(long userId, String text, int from, int size) {
+        MethodParameterValidator.checkUserIdForNullValue(userId, "поиск по имени и описанию");
+        MethodParameterValidator.checkPaginationParameters(from, size);
+        checkExistingAndReturnUserShort(userId);
+        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
+        Pageable page = PageRequest.of(from / size, size, sortById);
+        Page<ItemEntity> availableItemEntities = itemRepository
+                .findAllAvailableBySearchInNamesAndDescriptions(text, page);
+        Page<Item> items = availableItemEntities.map(objectMapper::fromDbEntity);
         log.info("Произведен поиск всех вещей у всех пользователей, в названии и/или описании которых " +
-                "присутствует текст '{}'. Найдено всего {} таких вещей", text, availableItemEntities.size());
-        return objectsToRestViewsListTransducer.apply(entitiesToObjectsListTransducer.apply(availableItemEntities));
+                "присутствует текст '{}'. Количество объектов для отображения на странице - {}, объекты отображаются " +
+                "по порядку с {} по {}", text, size, from + 1, items.getTotalElements());
+        return items.map(objectMapper::toRestView);
     }
 
     @Override
     public Comment addCommentToItem(long authorId, long itemId, CommentRestCommand commentRestCommand) {
-        UserShort author = checkUserExistingAndReturnUserShort(authorId);
+        MethodParameterValidator.checkUserIdForNullValue(authorId, "сохранение нового комментария");
+        UserShort author = checkExistingAndReturnUserShort(authorId);
         String authorName = author.getName();
         ItemEntity itemEntity = entityRepository.findById(itemId).orElseThrow(() ->
                 new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
                         "идентификатором id%d произошла ошибка: объект ранее не был сохранен", type, itemId)));
         boolean canUserComment = itemEntity.getItemBookings().stream()
                 .filter(booking -> "APPROVED".equals(booking.getStatus()))
-                .filter(booking -> authorId == booking.getId())
+                .filter(booking -> authorId == booking.getUserId())
                 .anyMatch(booking -> booking.getStart().isBefore(LocalDateTime.now()));
         if (!canUserComment) {
             throw new BadRequestHeaderException(String.format("Пользователь %s с идентификатором id%d пытался " +
@@ -159,10 +204,18 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
         commentEntity.setItem(itemEntity);
         commentEntity.setText(commentText);
         commentEntity = commentRepository.save(commentEntity);
+        List<CommentEntity> comments = itemEntity.getComments();
+        if (comments == null || comments.isEmpty()) {
+            comments = new ArrayList<>(List.of(commentEntity));
+        } else {
+            comments.add(commentEntity);
+        }
+        itemEntity.setComments(comments);
+        entityRepository.save(itemEntity);
         log.info("Пользователь с идентификатором id{} добавил комментарий {} для вещи {} с идентификатором id{}",
                 authorId, commentText, itemEntity.getName(), itemId);
-        return new Comment(commentEntity.getId(), authorId, authorName, commentText,
-                commentEntity.getCreated(), commentEntity.getLastModified());
+        return Comment.builder().id(commentEntity.getId()).authorId(authorId).authorName(authorName).text(commentText)
+                .created(commentEntity.getCreated()).lastModified(commentEntity.getLastModified()).build();
     }
 
     private Item mapItemWithLastAndNextBookings(ItemEntity itemEntity) {

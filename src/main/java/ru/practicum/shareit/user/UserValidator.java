@@ -1,6 +1,7 @@
 package ru.practicum.shareit.user;
 
 import org.springframework.stereotype.Component;
+
 import ru.practicum.shareit.common.DomainObjectValidator;
 import ru.practicum.shareit.common.ShareItConstants;
 import ru.practicum.shareit.exception.BadRequestBodyException;

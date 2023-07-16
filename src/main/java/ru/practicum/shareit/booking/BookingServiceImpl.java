@@ -2,20 +2,27 @@ package ru.practicum.shareit.booking;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
 import ru.practicum.shareit.booking.dao.BookingEntity;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingRestCommand;
 import ru.practicum.shareit.booking.dto.BookingRestView;
 import ru.practicum.shareit.common.CrudServiceImpl;
+import ru.practicum.shareit.common.MethodParameterValidator;
 import ru.practicum.shareit.exception.*;
 import ru.practicum.shareit.item.dao.ItemEntity;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.user.dao.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -29,28 +36,36 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
     public BookingServiceImpl(BookingRepository bookingRepository,
                               ItemRepository itemRepository,
                               UserRepository userRepository,
-                              BookingMapper bookingMapper,
-                              BookingValidator bookingValidator) {
+                              BookingMapper bookingMapper) {
         this.entityRepository = bookingRepository;
         this.bookingRepository = bookingRepository;
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
         this.objectMapper = bookingMapper;
-        this.domainObjectValidator = bookingValidator;
         this.type = "booking";
     }
 
     @Override
     public BookingRestView save(long userId, BookingRestCommand bookingRestCommand) {
+        MethodParameterValidator.checkUserIdForNullValue(userId, "сохранение");
         ItemEntity savedItemEntity = checkBookingRestCommandAndReturnItemEntity(userId, bookingRestCommand);
-        bookingRestCommand = bookingRestCommand.toBuilder().bookerId(userId).build();
+        bookingRestCommand = bookingRestCommand.toBuilder().build();
         Booking booking = objectMapper.fromRestCommand(bookingRestCommand);
         booking = booking.toBuilder()
+                .bookerId(userId)
                 .bookingStatus(BookingStatus.WAITING)
                 .build();
         BookingEntity bookingEntity = objectMapper.toDbEntity(booking);
         bookingEntity.setItem(savedItemEntity);
         bookingEntity = bookingRepository.save(bookingEntity);
+        List<BookingEntity> itemBookings = savedItemEntity.getItemBookings();
+        if (itemBookings == null || itemBookings.isEmpty()) {
+            itemBookings = new ArrayList<>(List.of(bookingEntity));
+        } else {
+            itemBookings.add(bookingEntity);
+        }
+        savedItemEntity.setItemBookings(itemBookings);
+        itemRepository.save(savedItemEntity);
         booking = objectMapper.fromDbEntity(bookingEntity);
         log.info("Пользователь с идентификатором id{} забронировал вещь '{}' с идентификатором id{} в период с {} по {}." +
                         "Объекту '{}' присвоен идентификатор id{}", userId, savedItemEntity.getName(),
@@ -60,7 +75,9 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
 
     @Override
     public BookingRestView changeBookingStatus(long userId, long bookingId, boolean isApproved) {
-        BookingEntity bookingEntity = checkUserAndObjectExistingAndReturnEntityFromDb(userId, bookingId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "изменение статуса");
+        checkExistingAndReturnUserShort(userId);
+        BookingEntity bookingEntity = checkUserConsistencyAndReturnEntity(userId, bookingId);
         long itemOwnerId = bookingEntity.getItem().getUserId();
         if (userId != itemOwnerId) {
             throw new ObjectNotFoundException(String.format("Операция изменения статуса бронирования с " +
@@ -82,93 +99,50 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
     }
 
     @Override
-    public List<BookingRestView> getAllForBookerWithStateParameter(long userId, String state) {
-        checkUserExistingAndReturnUserShort(userId);
-        List<Booking> requestedBookings;
-        switch (state) {
-            case "ALL":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByUserId(userId, sortByBookingStart));
-                log.info("Запрошен список всех бронирований пользователя с идентификатором id{}", userId);
-                break;
-            case "CURRENT":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllCurrentBookingsForUserById(userId, sortByBookingStart));
-                log.info("Запрошен список всех текущих бронирований пользователя с идентификатором id{}", userId);
-                break;
-            case "PAST":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllPastBookingsForUserById(userId, sortByBookingStart));
-                log.info("Запрошен список всех прошедших бронирований пользователя с идентификатором id{}", userId);
-                break;
-            case "FUTURE":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllFutureBookingsForUserById(userId, sortByBookingStart));
-                log.info("Запрошен список всех предстоящих бронирований пользователя с идентификатором id{}", userId);
-                break;
-            case "WAITING":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByUserIdAndStatus(userId, "WAITING", sortByBookingStart));
-                log.info("Запрошен список всех 'WAITING' бронирований пользователя с идентификатором id{}", userId);
-                break;
-            case "REJECTED":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByUserIdAndStatus(userId, "REJECTED", sortByBookingStart));
-                log.info("Запрошен список всех 'REJECTED' бронирований пользователя с идентификатором id{}", userId);
-                break;
-            default:
-                throw new UnsupportedStatusException("Unknown state: " + state);
+    public Page<BookingRestView> getAllForBookerWithStateParameter(long userId, String state, int from, int size) {
+        MethodParameterValidator.checkUserIdForNullValue(userId,
+                "получение всех бронирований, оформленных пользователем");
+        MethodParameterValidator.checkPaginationParameters(from, size);
+        BookingState bookingState;
+        try {
+            bookingState = BookingState.valueOf(state);
+        } catch (IllegalArgumentException exception) {
+            throw new UnsupportedStatusException("Unknown state: " + state);
         }
-        return objectsToRestViewsListTransducer.apply(requestedBookings);
+        checkExistingAndReturnUserShort(userId);
+        Pageable page = PageRequest.of(from / size, size, sortByBookingStart);
+        return getRestViewsForBookerWithIdAndState(bookingState, userId, page);
     }
 
     @Override
-    public List<BookingRestView> getAllForItemOwnerWithStateParameter(long itemOwnerId, String state) {
-        checkUserExistingAndReturnUserShort(itemOwnerId);
-        List<Booking> requestedBookings;
-        switch (state) {
-            case "ALL":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByItemUserId(itemOwnerId, sortByBookingStart));
-                log.info("Запрошен список всех бронирований вещи владельца с идентификатором id{}", itemOwnerId);
-                break;
-            case "CURRENT":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllCurrentBookingsForItemOwnerById(itemOwnerId, sortByBookingStart));
-                log.info("Запрошен список всех текущих бронирований владельца с идентификатором id{}", itemOwnerId);
-                break;
-            case "PAST":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllPastBookingsForItemOwnerById(itemOwnerId, sortByBookingStart));
-                log.info("Запрошен список всех прошедших бронирований владельца с идентификатором id{}", itemOwnerId);
-                break;
-            case "FUTURE":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllFutureBookingsForItemOwnerById(itemOwnerId, sortByBookingStart));
-                log.info("Запрошен список всех предстоящих бронирований владельца с идентификатором id{}", itemOwnerId);
-                break;
-            case "WAITING":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByItemUserIdAndStatus(itemOwnerId, "WAITING", sortByBookingStart));
-                log.info("Запрошен список всех 'WAITING' бронирований владельца с идентификатором id{}", itemOwnerId);
-                break;
-            case "REJECTED":
-                requestedBookings = entitiesToObjectsListTransducer.apply(bookingRepository
-                        .findAllByItemUserIdAndStatus(itemOwnerId, "REJECTED", sortByBookingStart));
-                log.info("Запрошен список всех 'REJECTED' бронирований владельца с идентификатором id{}", itemOwnerId);
-                break;
-            default:
-                throw new UnsupportedStatusException("Unknown state: " + state);
+    public Page<BookingRestView> getAllForItemOwnerWithStateParameter(
+            long itemOwnerId, String state, int from, int size) {
+        MethodParameterValidator.checkUserIdForNullValue(itemOwnerId, "получение всех бронирований хозяином вещи");
+        MethodParameterValidator.checkPaginationParameters(from, size);
+        BookingState bookingState;
+        try {
+            bookingState = BookingState.valueOf(state);
+        } catch (IllegalArgumentException exception) {
+            throw new UnsupportedStatusException("Unknown state: " + state);
         }
-        return objectsToRestViewsListTransducer.apply(requestedBookings);
+        checkExistingAndReturnUserShort(itemOwnerId);
+        Pageable page = PageRequest.of(from / size, size, sortByBookingStart);
+        return getRestViewsForOwnerWithIdAndState(bookingState, itemOwnerId, page);
     }
 
     @Override
-    protected BookingEntity checkUserAndObjectExistingAndReturnEntityFromDb(long userId, long bookingId) {
-        checkUserExistingAndReturnUserShort(userId);
-        BookingEntity bookingEntity = entityRepository.findById(bookingId).orElseThrow(() ->
-                new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
-                        "идентификатором id%d произошла ошибка: объект ранее не был сохранен", type, bookingId)));
+    public BookingRestView getById(long userId, long bookingId) {
+        MethodParameterValidator.checkUserIdForNullValue(userId, "получение по идентификатору");
+        checkExistingAndReturnUserShort(userId);
+        BookingEntity bookingEntity = checkUserConsistencyAndReturnEntity(userId, bookingId);
+        Booking booking = objectMapper.fromDbEntity(bookingEntity);
+        log.info("Пользователь с идентификатором id{} запросил данные объекта '{}' с идентификатором id{}",
+                userId, type, bookingId);
+        return objectMapper.toRestView(booking);
+    }
+
+    private BookingEntity checkUserConsistencyAndReturnEntity(long userId, long bookingId) {
+        BookingEntity bookingEntity = checkExistingAndReturnEntity(bookingId);
         if (userId != bookingEntity.getUserId() && userId != bookingEntity.getItem().getUserId()) {
             throw new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
                     "идентификатором id%d произошла ошибка: пользователь с id%d не является владельцем вещи и " +
@@ -178,7 +152,7 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
     }
 
     private ItemEntity checkBookingRestCommandAndReturnItemEntity(long userId, BookingRestCommand bookingRestCommand) {
-        checkUserExistingAndReturnUserShort(userId);
+        checkExistingAndReturnUserShort(userId);
         long itemId = bookingRestCommand.getItemId();
         ItemEntity itemEntity = itemRepository.findById(itemId).orElseThrow(() ->
                 new ObjectNotFoundException(String.format("При бронировании вещи с идентификатором id%d произошла " +
@@ -200,7 +174,9 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
                     itemId, savingBookingEnd, savingBookingStart));
         }
         if (itemEntity.getItemBookings() != null) {
-            List<Booking> bookings = entitiesToObjectsListTransducer.apply(itemEntity.getItemBookings());
+            List<Booking> bookings = itemEntity.getItemBookings().stream()
+                    .map(objectMapper::fromDbEntity)
+                    .collect(Collectors.toList());
             if (!bookings.isEmpty()) {
                 boolean isBookingTimeAlreadyTakenByAnotherBooking = bookings.stream()
                         .filter(booking -> BookingStatus.APPROVED.equals(booking.getBookingStatus()))
@@ -213,6 +189,74 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
             }
         }
         return itemEntity;
+    }
+
+    private Page<BookingRestView> getRestViewsForOwnerWithIdAndState(
+            BookingState bookingState, long itemOwnerId, Pageable page) {
+        Page<BookingEntity> requestedBookings;
+        switch (bookingState) {
+            case ALL:
+                requestedBookings = bookingRepository.findAllByItemUserId(itemOwnerId, page);
+                log.info("Запрошен список всех бронирований вещи владельца с идентификатором id{}", itemOwnerId);
+                break;
+            case CURRENT:
+                requestedBookings = bookingRepository.findAllCurrentBookingsForItemOwnerById(itemOwnerId, page);
+                log.info("Запрошен список всех текущих бронирований владельца с идентификатором id{}", itemOwnerId);
+                break;
+            case PAST:
+                requestedBookings = bookingRepository.findAllPastBookingsForItemOwnerById(itemOwnerId, page);
+                log.info("Запрошен список всех прошедших бронирований владельца с идентификатором id{}", itemOwnerId);
+                break;
+            case FUTURE:
+                requestedBookings = bookingRepository.findAllFutureBookingsForItemOwnerById(itemOwnerId, page);
+                log.info("Запрошен список всех предстоящих бронирований владельца с идентификатором id{}", itemOwnerId);
+                break;
+            case WAITING:
+                requestedBookings = bookingRepository.findAllByItemUserIdAndStatus(itemOwnerId, "WAITING", page);
+                log.info("Запрошен список всех 'WAITING' бронирований владельца с идентификатором id{}", itemOwnerId);
+                break;
+            case REJECTED:
+                requestedBookings = bookingRepository.findAllByItemUserIdAndStatus(itemOwnerId, "REJECTED", page);
+                log.info("Запрошен список всех 'REJECTED' бронирований владельца с идентификатором id{}", itemOwnerId);
+                break;
+            default:
+                throw new UnsupportedStatusException("Unknown state: " + bookingState.name());
+        }
+        return requestedBookings.map(objectMapper::fromDbEntity).map(objectMapper::toRestView);
+    }
+
+    private Page<BookingRestView> getRestViewsForBookerWithIdAndState(
+            BookingState bookingState, long userId, Pageable page) {
+        Page<BookingEntity> requestedBookings;
+        switch (bookingState) {
+            case ALL:
+                requestedBookings = bookingRepository.findAllByUserId(userId, page);
+                log.info("Запрошен список всех бронирований пользователя с идентификатором id{}", userId);
+                break;
+            case CURRENT:
+                requestedBookings = bookingRepository.findAllCurrentBookingsForUserById(userId, page);
+                log.info("Запрошен список всех текущих бронирований пользователя с идентификатором id{}", userId);
+                break;
+            case PAST:
+                requestedBookings = bookingRepository.findAllPastBookingsForUserById(userId, page);
+                log.info("Запрошен список всех прошедших бронирований пользователя с идентификатором id{}", userId);
+                break;
+            case FUTURE:
+                requestedBookings = bookingRepository.findAllFutureBookingsForUserById(userId, page);
+                log.info("Запрошен список всех предстоящих бронирований пользователя с идентификатором id{}", userId);
+                break;
+            case WAITING:
+                requestedBookings = bookingRepository.findAllByUserIdAndStatus(userId, "WAITING", page);
+                log.info("Запрошен список всех 'WAITING' бронирований пользователя с идентификатором id{}", userId);
+                break;
+            case REJECTED:
+                requestedBookings = bookingRepository.findAllByUserIdAndStatus(userId, "REJECTED", page);
+                log.info("Запрошен список всех 'REJECTED' бронирований пользователя с идентификатором id{}", userId);
+                break;
+            default:
+                throw new UnsupportedStatusException("Unknown state: " + bookingState.name());
+        }
+        return requestedBookings.map(objectMapper::fromDbEntity).map(objectMapper::toRestView);
     }
 
 }

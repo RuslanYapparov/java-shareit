@@ -1,11 +1,13 @@
 package ru.practicum.shareit.item.comment;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 import lombok.Value;
 
 import java.time.LocalDateTime;
 
 @Value
+@Builder
 public class Comment {
     @JsonProperty("id")
     long id;

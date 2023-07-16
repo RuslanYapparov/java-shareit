@@ -1,6 +1,8 @@
 package ru.practicum.shareit.common;
 
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import ru.practicum.shareit.exception.BadRequestHeaderException;
@@ -9,12 +11,9 @@ import ru.practicum.shareit.exception.ObjectNotFoundException;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dao.UserShort;
 
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 @Slf4j
-public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
+@NoArgsConstructor
+public abstract class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
         implements CrudService<C, V> {
     // E - тип данных объекта слоя репозитроиев (entity)
     // T - тип данных объекта сервисного слоя (domain type)
@@ -24,37 +23,40 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
     protected UserRepository userRepository;
     protected DomainObjectValidator<T> domainObjectValidator;
     protected ObjectMapper<E, T, C, V> objectMapper;
-    protected Function<List<T>, List<V>> objectsToRestViewsListTransducer = listOfObjects -> listOfObjects.stream()
-            .map(objectMapper::toRestView)
-            .collect(Collectors.toList());
-    protected Function<List<E>, List<T>> entitiesToObjectsListTransducer = listOfEntities -> listOfEntities.stream()
-            .map(objectMapper::fromDbEntity)
-            .collect(Collectors.toList());
     protected String type = "Some_type";
 
-    @Override
-    public V save(long userId, C commandObject) {       // Переопределяется в сервисе любой сущности, связанной с User
-        T object = objectMapper.fromRestCommand(commandObject);
-        object = domainObjectValidator.validateAndAssignNullFields(object);
-        E objectEntity = objectMapper.toDbEntity(object);
-        objectEntity = entityRepository.save(objectEntity);
-        object = objectMapper.fromDbEntity(objectEntity);
-        log.info("Пользователь с идентификатором id{} сохранил новый объект типа '{}'. Присвоен идентификатор id{}",
-                userId, type, objectEntity.getId());
-        return objectMapper.toRestView(object);
+    public CrudServiceImpl(JpaRepository<E, Long> jpaRepository,
+    UserRepository userRepository,
+    DomainObjectValidator<T> objectValidator,
+    ObjectMapper<E, T, C, V> objectMapper) {
+        this.entityRepository = jpaRepository;
+        this.userRepository = userRepository;
+        this.domainObjectValidator = objectValidator;
+        this.objectMapper = objectMapper;
     }
 
     @Override
-    public List<V> getAll(long userId) {                // Переопределяется в сервисе любой сущности, связанной с User
-        List<T> objects = entitiesToObjectsListTransducer.apply(entityRepository.findAll());
-        log.info("Запрошен список всех сохраненных объектов '{}'. Количество сохраненных объектов - {}",
-                type, objects.size());
-        return objectsToRestViewsListTransducer.apply(objects);
+    public abstract V save(long userId, C commandObject);
+
+    @Override
+    public Page<V> getAll(long userId, int from, int size) {
+        MethodParameterValidator.checkUserIdForNullValue(userId, "получение всех объектов типа '" + type + "'");
+        checkExistingAndReturnUserShort(userId);
+        Sort sortByCreatedDate = Sort.by(Sort.Direction.DESC, "created");
+        Pageable page = PageRequest.of(from, size, sortByCreatedDate);
+        Page<E> entityPage = entityRepository.findAll(page);
+        Page<T> objectPage = entityPage.map(objectMapper::fromDbEntity);
+        log.info("Запрошен постраничный список всех сохраненных объектов '{}'. Количество объектов для отображения " +
+        "на странице - {}, " +
+                "объекты отображаются по порядку с {} по {}", type, size, from + 1, objectPage.getTotalElements());
+        return objectPage.map(objectMapper::toRestView);
     }
 
     @Override
     public V getById(long userId, long objectId) {
-        E objectEntity = checkUserAndObjectExistingAndReturnEntityFromDb(userId, objectId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "получение по идентификатору");
+        checkExistingAndReturnUserShort(userId);
+        E objectEntity = checkExistingAndReturnEntity(objectId);
         T object = objectMapper.fromDbEntity(objectEntity);
         log.info("Пользователь с идентификатором id{} запросил данные объекта '{}' с идентификатором id{}",
                 userId, type, objectId);
@@ -62,8 +64,10 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
     }
 
     @Override
-    public V update(long userId, long objectId, C commandObject) {        // Переопределяется в сервисе любой сущности,
-        T object = objectMapper.fromRestCommand(commandObject);                                     // Связанной с User
+    public V update(long userId, long objectId, C commandObject) {
+        MethodParameterValidator.checkUserIdForNullValue(userId, "обновление");
+        checkExistingAndReturnUserShort(userId);
+        T object = objectMapper.fromRestCommand(commandObject);
         object = domainObjectValidator.validateAndAssignNullFields(object);
         E objectEntity = entityRepository.save(objectMapper.toDbEntity(object));
         object = objectMapper.fromDbEntity(objectEntity);
@@ -73,7 +77,9 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
     }
 
     @Override
-    public void deleteAll(long userId) {                // Переопределяется в сервисе любой сущности, связанной с User
+    public void deleteAll(long userId) {
+        MethodParameterValidator.checkUserIdForNullValue(userId, "удаление всех объектов");
+        checkExistingAndReturnUserShort(userId);
         long quantity = entityRepository.count();
         entityRepository.deleteAll();
         if (entityRepository.count() != 0) {
@@ -86,15 +92,16 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
 
     @Override
     public V deleteById(long userId, long objectId) {
-        E objectEntity = checkUserAndObjectExistingAndReturnEntityFromDb(userId, objectId);
+        MethodParameterValidator.checkUserIdForNullValue(userId, "удаление объекта по идентификатору");
+        checkExistingAndReturnUserShort(userId);
+        E objectEntity = checkExistingAndReturnEntity(objectId);
         entityRepository.deleteById(objectId);
-        entityRepository.getReferenceById(objectId);
         T object = objectMapper.fromDbEntity(objectEntity);
         log.info("Удален объект '{}' с идентификатором '{}'", type, objectId);
         return objectMapper.toRestView(object);
     }
 
-    protected UserShort checkUserExistingAndReturnUserShort(long userId) {
+    protected UserShort checkExistingAndReturnUserShort(long userId) {
         if (userId == 0L) {
             throw new BadRequestHeaderException("Не указан идентификатор пользователя-хозяина вещи в заголовке " +
                     "Http-запроса, либо указано значение 0");
@@ -104,8 +111,7 @@ public class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, C, V>
                     "пользователя-хозяина id'%d' не соответствует ни одному сохраненному пользователю", userId)));
     }
 
-    protected E checkUserAndObjectExistingAndReturnEntityFromDb(long userId, long objectId) {
-        checkUserExistingAndReturnUserShort(userId);
+    protected E checkExistingAndReturnEntity(long objectId) {
         return entityRepository.findById(objectId).orElseThrow(() ->
                 new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
                 "идентификатором id%d произошла ошибка: объект ранее не был сохранен", type, objectId)));

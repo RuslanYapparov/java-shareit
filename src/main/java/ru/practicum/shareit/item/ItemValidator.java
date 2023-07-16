@@ -13,6 +13,7 @@ public class ItemValidator implements DomainObjectValidator<Item> {
         return Item.builder()
                 .id(checkLongField(type, "id", item.getId()))
                 .ownerId(checkLongField(type, "owner_id", item.getOwnerId()))
+                .requestId(checkLongField(type, "request_id", item.getRequestId()))
                 .name(checkStringField(type, "name", item.getName()))
                 .description(checkStringField(type, "description", item.getDescription()))
                 .available(item.getAvailable())

@@ -16,6 +16,10 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "bookings")
 public class BookingEntity extends UpdatableUserDependedEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "booking_id")
+    protected long id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
     ItemEntity item;

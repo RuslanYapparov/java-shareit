@@ -98,12 +98,7 @@ public class ShareItExceptionHandler extends ResponseEntityExceptionHandler {
         String message = exception.getMessage();
         ErrorResponseView error;
         log.warn(exception.toString());
-        if (message.contains("должно быть больше") || message.contains("must be greater")) {
-            // Опять костыль, чтобы пройти тест в Postman (на эту ошибку ожидает код статуса 404, хотя логично бы было 400)
-            error = new ErrorResponseView(HttpStatus.NOT_FOUND.value(), "ConstraintViolationException", message);
-        } else {
-            error = new ErrorResponseView(HttpStatus.BAD_REQUEST.value(), "ConstraintViolationException", message);
-        }
+        error = new ErrorResponseView(HttpStatus.BAD_REQUEST.value(), "ConstraintViolationException", message);
         return new ResponseEntity<>(error, HttpStatus.valueOf(error.getStatusCode()));
     }
 

@@ -1,17 +1,17 @@
 package ru.practicum.shareit.booking;
 
+import org.springframework.data.domain.Page;
+
 import ru.practicum.shareit.booking.dto.BookingRestCommand;
 import ru.practicum.shareit.booking.dto.BookingRestView;
 import ru.practicum.shareit.common.CrudService;
-
-import java.util.List;
 
 public interface BookingService extends CrudService<BookingRestCommand, BookingRestView> {
 
     BookingRestView changeBookingStatus(long userId, long bookingId, boolean isApproved);
 
-    List<BookingRestView> getAllForBookerWithStateParameter(long userId, String state);
+    Page<BookingRestView> getAllForBookerWithStateParameter(long userId, String state, int from, int size);
 
-    List<BookingRestView> getAllForItemOwnerWithStateParameter(long userId, String state);
+    Page<BookingRestView> getAllForItemOwnerWithStateParameter(long userId, String state, int from, int size);
 
 }
