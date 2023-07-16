@@ -14,8 +14,6 @@ import ru.practicum.shareit.common.ObjectMapper;
 public interface BookingMapper extends ObjectMapper<BookingEntity, Booking, BookingRestCommand, BookingRestView> {
 
     @Override
-//    @Mapping(target = "booker", expression = "java(toBooker(booking))")
-//    @Mapping(target = "item", expression = "java(toBookedItem(booking))")
     @Mapping(target = "booker", source = "booking")
     @Mapping(target = "item", source = "booking")
     @Mapping(target = "status", expression = "java(booking.getBookingStatus().name())")
