@@ -1,28 +1,42 @@
 version: '3.8'
 services:
   gateway:
-    build:
-    image:
-    container_name:
+    build: ./gateway/
+    image: shareit_gateway_image
+    container_name: shareit_gateway
     ports:
       - "8080:8080"
+      - "8081:8081"
     depends_on:
+      - server
     environment:
       - SHAREIT_SERVER_URL=http://server:9090
 
   server:
-    build:
-    image:
-    container_name:
+    build: ./server/
+    image: shareit_server_image
+    container_name: shareit_server
     ports:
       - "9090:9090"
+      - "9091:9091"
     depends_on:
+      - db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/shareit
+       - DB_HOST=db
+       - DB_PORT=5432
+       - DB_NAME=shareit_db
+       - POSTGRES_USER=shareit_dev
+       - POSTGRES_PASSWORD=shareit
 
   db:
-    image:
-    container_name:
+    image: postgres:13.7-alpine
+    container_name: shareit_db
+    volumes:
+      - /var/lib/postgresql/data/shareit
     ports:
       - "6541:5432"
     environment:
+      - POSTGRES_DB=shareit_db
+      - POSTGRES_USER=shareit_dev
+      - POSTGRES_PASSWORD=shareit
+      - PGDATA=/var/lib/postgresql/data/shareit
