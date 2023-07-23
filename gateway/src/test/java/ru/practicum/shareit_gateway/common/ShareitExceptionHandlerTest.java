@@ -8,7 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.practicum.shareit_gateway.exception.InternalLogicException;
+import ru.practicum.shareit_gateway.exception.BadRequestParameterException;
 import ru.practicum.shareit_gateway.item.*;
 
 import java.nio.charset.StandardCharsets;
@@ -30,27 +30,9 @@ public class ShareitExceptionHandlerTest {
     private MockMvc mvc;
 
     @Test
-    public void handleInternalLogicException_whenMistakeInServerCode_returnErrorResponseView() throws Exception {
-        when(itemClient.getById(Mockito.anyLong(), Mockito.anyLong()))
-                .thenThrow(new InternalLogicException("Что-то пошло не так"));
-
-        mvc.perform(get("/items/1")
-                        .header("X-Sharer-User-Id", 1L)
-                        .characterEncoding(StandardCharsets.UTF_8)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.exception", is("InternalLogicException")))
-                .andExpect(jsonPath("$.debugMessage", is("Что-то пошло не так")));
-
-        verify(itemClient, Mockito.times(1))
-                .getById(Mockito.anyLong(), Mockito.anyLong());
-    }
-
-    @Test
     public void handleMethodArgumentTypeMismatch_whenGetMismatchedParameter_returnErrorResponseView() throws Exception {
         when(itemClient.getById(Mockito.anyLong(), Mockito.anyLong()))
-                .thenThrow(new InternalLogicException("Что-то пошло не так"));
+                .thenThrow(new BadRequestParameterException("Что-то пошло не так"));
 
         mvc.perform(get("/items/{item_id}", "first_item")
                         .header("X-Sharer-User-Id", 1L)

@@ -9,10 +9,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.practicum.shareit_gateway.booking.dto.BookingRestCommand;
+import ru.practicum.shareit_gateway.booking.dto.*;
 import ru.practicum.shareit_gateway.common.ShareItConstants;
-import ru.practicum.shareit_gateway.booking.dto.BookingState;
-import ru.practicum.shareit_gateway.exception.InternalLogicException;
+import ru.practicum.shareit_gateway.exception.BadRequestParameterException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -129,7 +128,7 @@ public class BookingControllerTest {
     @Test
     public void changeStatus_whenGetNullApproved_thenThrowBadRequestParameterException() throws Exception {
         when(bookingClient.changeStatus(1L, 1L, false))
-                .thenThrow(new InternalLogicException("Это исключение не должно быть выброшено"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно быть выброшено"));
 
         mvc.perform(patch("/bookings/{booking_id}", "1")
                         .header("X-Sharer-User-Id", 1L)

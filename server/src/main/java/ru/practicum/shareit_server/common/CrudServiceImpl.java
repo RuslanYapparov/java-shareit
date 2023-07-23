@@ -54,7 +54,7 @@ public abstract class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, 
     @Override
     public V getById(long userId, long objectId) {
         checkExistingAndReturnUserShort(userId);
-        E objectEntity = checkExistingAndReturnEntity(objectId);
+        E objectEntity = findObjectEntityIfExists(objectId);
         T object = objectMapper.fromDbEntity(objectEntity);
         log.info("Пользователь с идентификатором id{} запросил данные объекта '{}' с идентификатором id{}",
                 userId, type, objectId);
@@ -89,7 +89,7 @@ public abstract class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, 
     @Override
     public V deleteById(long userId, long objectId) {
         checkExistingAndReturnUserShort(userId);
-        E objectEntity = checkExistingAndReturnEntity(objectId);
+        E objectEntity = findObjectEntityIfExists(objectId);
         entityRepository.deleteById(objectId);
         T object = objectMapper.fromDbEntity(objectEntity);
         log.info("Удален объект '{}' с идентификатором '{}'", type, objectId);
@@ -106,7 +106,7 @@ public abstract class CrudServiceImpl<E extends UpdatableUserDependedEntity, T, 
                     "пользователя-хозяина id'%d' не соответствует ни одному сохраненному пользователю", userId)));
     }
 
-    protected E checkExistingAndReturnEntity(long objectId) {
+    protected E findObjectEntityIfExists(long objectId) {
         return entityRepository.findById(objectId).orElseThrow(() ->
                 new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
                 "идентификатором id%d произошла ошибка: объект ранее не был сохранен", type, objectId)));

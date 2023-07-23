@@ -9,9 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.client.MockRestServiceServer;
-import ru.practicum.shareit_gateway.booking.dto.BookingState;
+import ru.practicum.shareit_gateway.booking.dto.*;
 import ru.practicum.shareit_gateway.common.ShareItConstants;
-import ru.practicum.shareit_gateway.booking.dto.BookingRestCommand;
 import ru.practicum.shareit_gateway.exception.ErrorResponseView;
 
 import java.util.List;

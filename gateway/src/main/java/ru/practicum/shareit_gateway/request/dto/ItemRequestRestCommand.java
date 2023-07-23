@@ -13,10 +13,10 @@ import javax.validation.constraints.Size;
 @Setter
 @Getter
 public class ItemRequestRestCommand {
-    @JsonProperty("description")
     @NotNull
     @NotBlank
     @Size(max = 2000)
+    @JsonProperty("description")
     String description;
 
 }

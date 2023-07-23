@@ -9,8 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.client.MockRestServiceServer;
 import ru.practicum.shareit_gateway.common.ShareItConstants;
-import ru.practicum.shareit_gateway.item.dto.CommentRestCommand;
-import ru.practicum.shareit_gateway.item.dto.ItemRestCommand;
+import ru.practicum.shareit_gateway.item.dto.*;
 
 import java.time.LocalDateTime;
 import java.util.List;

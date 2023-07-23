@@ -1,4 +1,4 @@
-package ru.practicum.shareit_gateway.item;
+package ru.practicum.shareit_gateway.item.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;

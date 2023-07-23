@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 
 import ru.practicum.shareit_server.common.DomainObjectValidator;
 import ru.practicum.shareit_server.common.ShareItConstants;
-import ru.practicum.shareit_server.exception.*;
 import ru.practicum.shareit_server.exception.InternalLogicException;
 import ru.practicum.shareit_server.exception.ObjectAlreadyExistsException;
 import ru.practicum.shareit_server.user.dao.UserEntity;
@@ -73,7 +72,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserRestView getById(long userId) {
-        User user = getUserObjectFromDbById(userId);
+        User user = getUserEntityFromDbByIdIfExists(userId);
         log.info("Запрошен пользователь с идентификатором '{}'", userId);
         return userMapper.toRestView(user);
     }
@@ -121,7 +120,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserRestView deleteById(long userId) {
-        User user = getUserObjectFromDbById(userId);
+        User user = getUserEntityFromDbByIdIfExists(userId);
         userRepository.deleteById(userId);
         log.info("Удалены данные пользователя с идентификатором '{}'", userId);
         return userMapper.toRestView(user);
@@ -138,7 +137,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private User getUserObjectFromDbById(long userId) {
+    private User getUserEntityFromDbByIdIfExists(long userId) {
         UserEntity userEntity = userRepository.findById(userId).orElseThrow(() ->
                 new ObjectNotFoundException(String.format("Пользователь с идентификатором id'%d' " +
                         "не был сохранен", userId)));

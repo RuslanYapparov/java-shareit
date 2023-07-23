@@ -14,8 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
 import ru.practicum.shareit_gateway.common.ShareItConstants;
-import ru.practicum.shareit_gateway.exception.InternalLogicException;
+import ru.practicum.shareit_gateway.exception.BadRequestParameterException;
 import ru.practicum.shareit_gateway.request.dto.ItemRequestRestCommand;
+import ru.practicum.shareit_gateway.request.dto.ItemRequestRestView;
+import ru.practicum.shareit_gateway.request.dto.RequestedItem;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -84,7 +86,7 @@ public class ItemRequestControllerTest {
     @ValueSource(longs = {0L, -2L})
     public void save_whenGetIncorrectUserId_thenThrowException(long userId) throws Exception {
         when(itemRequestClient.save(Mockito.anyLong(), Mockito.any(ItemRequestRestCommand.class)))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
 
         mvc.perform(post("/requests")
                         .header("X-Sharer-User-Id", userId)
@@ -162,7 +164,7 @@ public class ItemRequestControllerTest {
     @NullSource
     public void save_whenGetIncorrectRestCommand_thenThrowException(String description) throws Exception {
         when(itemRequestClient.save(Mockito.anyLong(), Mockito.any(ItemRequestRestCommand.class)))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
 
         mvc.perform(post("/requests")
                         .header("X-Sharer-User-Id", 1L)
@@ -181,7 +183,7 @@ public class ItemRequestControllerTest {
     @Test
     public void save_whenGetRestCommandWithMoreThan2000Characters_thenThrowException() throws Exception {
         when(itemRequestClient.save(Mockito.anyLong(), Mockito.any(ItemRequestRestCommand.class)))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
 
         mvc.perform(post("/requests")
                         .header("X-Sharer-User-Id", 1L)
@@ -201,11 +203,11 @@ public class ItemRequestControllerTest {
     @ValueSource(ints = {0, -1})
     public void allGetMethods_whenGetIncorrectParameters_thenThrowException(int value) throws Exception {
         when(itemRequestClient.getAll(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
         when(itemRequestClient.getAllRequestsOfRequester(Mockito.anyLong()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
         when(itemRequestClient.getById(Mockito.anyLong(), Mockito.anyLong()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
 
         mvc.perform(get("/requests/all")
                         .header("X-Sharer-User-Id", String.valueOf(value))
@@ -250,7 +252,7 @@ public class ItemRequestControllerTest {
     @Test
     public void getAll_whenGetIncorrectFromParameter_thenThrowException() throws Exception {
         when(itemRequestClient.getAll(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
 
         mvc.perform(get("/requests/all")
                         .header("X-Sharer-User-Id", 1L)

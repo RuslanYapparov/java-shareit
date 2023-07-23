@@ -107,7 +107,7 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
     @Override
     public ItemRestView getById(long userId, long itemId) {
         checkExistingAndReturnUserShort(userId);
-        ItemEntity itemEntity = checkExistingAndReturnEntity(itemId);
+        ItemEntity itemEntity = findObjectEntityIfExists(itemId);
         Item item;
         if (userId == itemEntity.getUserId()) {
             item = mapItemWithLastAndNextBookings(itemEntity);
@@ -122,7 +122,7 @@ public class ItemServiceImpl extends CrudServiceImpl<ItemEntity, Item, ItemRestC
     @Override
     public ItemRestView update(long userId, long itemId, ItemRestCommand itemCommand) {
         checkExistingAndReturnUserShort(userId);
-        ItemEntity itemEntity = checkExistingAndReturnEntity(itemId);
+        ItemEntity itemEntity = findObjectEntityIfExists(itemId);
         String savedName = itemEntity.getName();
         String savedDescription = itemEntity.getDescription();
         boolean savedAvailable = itemEntity.isAvailable();

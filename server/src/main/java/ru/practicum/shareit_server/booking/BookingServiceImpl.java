@@ -13,7 +13,6 @@ import ru.practicum.shareit_server.booking.dao.BookingRepository;
 import ru.practicum.shareit_server.booking.dto.BookingRestCommand;
 import ru.practicum.shareit_server.booking.dto.BookingRestView;
 import ru.practicum.shareit_server.common.CrudServiceImpl;
-import ru.practicum.shareit_server.exception.*;
 import ru.practicum.shareit_server.exception.InternalLogicException;
 import ru.practicum.shareit_server.item.dao.ItemEntity;
 import ru.practicum.shareit_server.item.dao.ItemRepository;
@@ -50,7 +49,7 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
 
     @Override
     public BookingRestView save(long userId, BookingRestCommand bookingRestCommand) {
-        ItemEntity savedItemEntity = checkBookingRestCommandAndReturnItemEntity(userId, bookingRestCommand);
+        ItemEntity savedItemEntity = getItemEntityForBookingIfCorrectParameters(userId, bookingRestCommand);
         bookingRestCommand = bookingRestCommand.toBuilder().build();
         Booking booking = objectMapper.fromRestCommand(bookingRestCommand);
         booking = booking.toBuilder()
@@ -78,7 +77,7 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
     @Override
     public BookingRestView changeBookingStatus(long userId, long bookingId, boolean isApproved) {
         checkExistingAndReturnUserShort(userId);
-        BookingEntity bookingEntity = checkUserConsistencyAndReturnEntity(userId, bookingId);
+        BookingEntity bookingEntity = getBookingEntityIfCorrectBooker(userId, bookingId);
         long itemOwnerId = bookingEntity.getItem().getUserId();
         if (userId != itemOwnerId) {
             throw new ObjectNotFoundException(String.format("Операция изменения статуса бронирования с " +
@@ -119,15 +118,15 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
     @Override
     public BookingRestView getById(long userId, long bookingId) {
         checkExistingAndReturnUserShort(userId);
-        BookingEntity bookingEntity = checkUserConsistencyAndReturnEntity(userId, bookingId);
+        BookingEntity bookingEntity = getBookingEntityIfCorrectBooker(userId, bookingId);
         Booking booking = objectMapper.fromDbEntity(bookingEntity);
         log.info("Пользователь с идентификатором id{} запросил данные объекта '{}' с идентификатором id{}",
                 userId, type, bookingId);
         return objectMapper.toRestView(booking);
     }
 
-    private BookingEntity checkUserConsistencyAndReturnEntity(long userId, long bookingId) {
-        BookingEntity bookingEntity = checkExistingAndReturnEntity(bookingId);
+    private BookingEntity getBookingEntityIfCorrectBooker(long userId, long bookingId) {
+        BookingEntity bookingEntity = findObjectEntityIfExists(bookingId);
         if (userId != bookingEntity.getUserId() && userId != bookingEntity.getItem().getUserId()) {
             throw new ObjectNotFoundException(String.format("В ходе выполнения операции над объектом '%s' с " +
                     "идентификатором id%d произошла ошибка: пользователь с id%d не является владельцем вещи и " +
@@ -136,7 +135,7 @@ public class BookingServiceImpl extends CrudServiceImpl<BookingEntity, Booking, 
         return bookingEntity;
     }
 
-    private ItemEntity checkBookingRestCommandAndReturnItemEntity(long userId, BookingRestCommand bookingRestCommand) {
+    private ItemEntity getItemEntityForBookingIfCorrectParameters(long userId, BookingRestCommand bookingRestCommand) {
         checkExistingAndReturnUserShort(userId);
         long itemId = bookingRestCommand.getItemId();
         ItemEntity itemEntity = itemRepository.findById(itemId).orElseThrow(() ->

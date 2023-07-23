@@ -11,6 +11,8 @@ import org.springframework.test.web.client.MockRestServiceServer;
 
 import ru.practicum.shareit_gateway.common.ShareItConstants;
 import ru.practicum.shareit_gateway.request.dto.ItemRequestRestCommand;
+import ru.practicum.shareit_gateway.request.dto.ItemRequestRestView;
+import ru.practicum.shareit_gateway.request.dto.RequestedItem;
 
 import java.util.ArrayList;
 import java.util.List;

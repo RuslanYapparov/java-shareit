@@ -50,14 +50,6 @@ public class ShareItExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(exception.getExceptionRestView(), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(InternalLogicException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponseView handleInternalLogicException(InternalLogicException exception) {
-        log.warn(exception.getMessage());
-        return new ErrorResponseView(HttpStatus.INTERNAL_SERVER_ERROR.value(), "InternalLogicException",
-                exception.getMessage());
-    }
-
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     protected ResponseEntity<ErrorResponseView> handleMethodArgumentTypeMismatch(
             MethodArgumentTypeMismatchException exception) {

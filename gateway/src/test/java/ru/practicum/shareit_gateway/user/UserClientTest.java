@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.client.MockRestServiceServer;
 
 import ru.practicum.shareit_gateway.common.ShareItConstants;
+import ru.practicum.shareit_gateway.user.dto.UserAddress;
 import ru.practicum.shareit_gateway.user.dto.UserRestCommand;
+import ru.practicum.shareit_gateway.user.dto.UserRestView;
 
 import java.util.List;
 

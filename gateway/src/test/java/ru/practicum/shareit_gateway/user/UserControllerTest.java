@@ -14,8 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
 import ru.practicum.shareit_gateway.common.ShareItConstants;
-import ru.practicum.shareit_gateway.exception.InternalLogicException;
+import ru.practicum.shareit_gateway.exception.BadRequestParameterException;
+import ru.practicum.shareit_gateway.user.dto.UserAddress;
 import ru.practicum.shareit_gateway.user.dto.UserRestCommand;
+import ru.practicum.shareit_gateway.user.dto.UserRestView;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -104,7 +106,7 @@ public class UserControllerTest {
     @NullSource
     public void save_whenGetIncorrectRestCommand_thenThrowException(String incorrectString) throws Exception {
         when(userClient.save(Mockito.any(UserRestCommand.class)))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
 
         mvc.perform(post("/users")
                         .content(objectMapper.writeValueAsString(UserRestCommand.builder()
@@ -137,7 +139,7 @@ public class UserControllerTest {
     @Test
     public void save_whenGetEmailWithoutDot_thenThrowException() throws Exception {
         when(userClient.save(Mockito.any(UserRestCommand.class)))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
 
         mvc.perform(post("/users")
                         .content(objectMapper.writeValueAsString(UserRestCommand.builder()
@@ -194,7 +196,7 @@ public class UserControllerTest {
     @ValueSource(longs = {0, -1})
     public void getById_whenGetIncorrectArguments_thenThrowException(long value) throws Exception {
         when(userClient.getById(Mockito.anyLong()))
-                .thenThrow(new InternalLogicException("Это исключение не должно появиться"));
+                .thenThrow(new BadRequestParameterException("Это исключение не должно появиться"));
 
         mvc.perform(get("/users/{user_id}", String.valueOf(value))
                         .characterEncoding(StandardCharsets.UTF_8)
