@@ -38,6 +38,6 @@ public class UserEntity {
     @Column(name = "last_modified")
     private LocalDateTime lastModified;
     @Column(name = "user_rating")
-    private float userRating;  // Наверное, пользователей (владельцев и арендаторов) нкжно оценивать другим пользовтелям
+    private float userRating;
 
 }

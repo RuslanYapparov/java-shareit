@@ -17,7 +17,7 @@ public class User {
     String telephoneNumber;
     boolean telephoneVisible;
     URI avatarUri;
-    float userRating;   // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим пользовтелям
+    float userRating;
     LocalDateTime created;
     LocalDateTime lastModified;
 

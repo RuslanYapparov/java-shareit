@@ -5,7 +5,7 @@ import ru.practicum.shareit_server.exception.BadRequestBodyException;
 import java.net.URI;
 
 public interface DomainObjectValidator<T> {
-    // T - тип данных объекта сервисного слоя (ru.practicum.shareit.user, ru.practicum.shareit.item, etc.)
+    // T - тип данных объекта сервисного слоя (user, item, etc.)
     T validateAndAssignNullFields(T domainObject);
 
     default long checkLongField(String type, String fieldName, long value) {

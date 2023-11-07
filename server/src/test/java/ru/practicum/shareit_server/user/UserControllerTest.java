@@ -110,7 +110,6 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", is(objectMapper.readValue(objectMapper.writeValueAsString(
                         List.of(firstReturnedUser, secondReturnedUser)), List.class))));
-        // Выглядит довольно странно, но пока нашел только такой способ приведения списков объектов к проверяемому варианту
         verify(userService, Mockito.times(1))
                 .getAll();
     }

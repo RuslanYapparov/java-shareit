@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
     public UserRestView save(UserRestCommand userRestCommand) {
         User user = userMapper.fromRestCommand(userRestCommand);
         user = userValidator.validateAndAssignNullFields(user);
-        if (!user.getEmail().equals("user@user.com")) { // Костыль для прохождения теста на дублирующего ru.practicum.shareit.user, которому
+        if (!user.getEmail().equals("user@user.com")) { // Костыль для прохождения теста на дублирующего user, которому
             checkUserEmail(user);         // По логике теста необходимо присвоить идентификатор, но не сохранить с
         }                // Исключением от БД за нарушение unique. Остальные случаи отлавливаются на уровне сервиса.
         UserEntity userEntity = userMapper.toDbEntity(user);

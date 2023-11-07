@@ -31,6 +31,6 @@ public class UserRestView {
     @JsonProperty("lastModified")
     LocalDateTime lastModified;
     @JsonProperty("userRating")
-    float userRating;      // Наверное, пользователей (владельцев и арендаторов) имеет смысл оценивать другим
+    float userRating;
 
 }

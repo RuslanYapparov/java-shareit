@@ -107,7 +107,6 @@ public class ItemControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", is(objectMapper.readValue(objectMapper.writeValueAsString(
                         List.of(item)), List.class))));
-        // Выглядит довольно странно, но пока нашел только такой способ приведения списков объектов к проверяемому варианту
         verify(itemService, Mockito.times(1))
                 .getAll(1L, 0, 20);
     }
@@ -134,7 +133,6 @@ public class ItemControllerTest {
                 .andExpect(jsonPath("$.nextBooking", is(nullValue())))
                 .andExpect(jsonPath("$.comments", is(objectMapper.readValue(objectMapper.writeValueAsString(
                         item.getComments()), List.class))));
-// Выглядит довольно странно, но пока нашел только такой способ приведения списков объектов к проверяемому варианту
         verify(itemService, Mockito.times(1))
                 .getById(1L, 1L);
     }
@@ -165,7 +163,6 @@ public class ItemControllerTest {
                 .andExpect(jsonPath("$.nextBooking", is(nullValue())))
                 .andExpect(jsonPath("$.comments", is(objectMapper.readValue(objectMapper.writeValueAsString(
                         item.getComments()), List.class))));
-// Выглядит довольно странно, но пока нашел только такой способ приведения списков объектов к проверяемому варианту
 
         verify(itemService, Mockito.times(1))
                 .update(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(ItemRestCommand.class));

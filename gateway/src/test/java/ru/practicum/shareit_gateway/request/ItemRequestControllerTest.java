@@ -110,7 +110,6 @@ public class ItemRequestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", is(objectMapper.readValue(objectMapper.writeValueAsString(
                         List.of(firstReturnedRequest, secondReturnedRequest)), List.class))));
-// Выглядит довольно странно, но пока нашел только такой способ приведения списков объектов к проверяемому варианту
         verify(itemRequestClient, Mockito.times(1))
                 .getAllRequestsOfRequester(Mockito.anyLong());
     }
@@ -131,7 +130,6 @@ public class ItemRequestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", is(objectMapper.readValue(objectMapper.writeValueAsString(
                         List.of(firstReturnedRequest, secondReturnedRequest)), List.class))));
-        // Выглядит довольно странно, но пока нашел только такой способ приведения списков объектов к проверяемому варианту
         verify(itemRequestClient, Mockito.times(1))
                 .getAll(1L, 0, 20);
     }
@@ -154,7 +152,6 @@ public class ItemRequestControllerTest {
                 .andExpect(jsonPath("$.lastModified", is(firstReturnedRequest.getLastModified().toString())))
                 .andExpect(jsonPath("$.items", is(objectMapper.readValue(objectMapper.writeValueAsString(
                         firstReturnedRequest.getItems()), List.class))));
-// Выглядит довольно странно, но пока нашел только такой способ приведения списков объектов к проверяемому варианту
         verify(itemRequestClient, Mockito.times(1))
                 .getById(1L, 1L);
     }
